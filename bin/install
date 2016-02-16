@@ -61,13 +61,8 @@ get_download_file_path() {
     local install_type=$1
     local version=$2
     local tmp_download_dir=$3
-
-    local php_type=$(get_php_type $version)
     local php_version=$(get_php_version $version)
-
-    if [ "${php_type}" = "Lua" ]; then
-        local pkg_name="php-${php_version}.tar.gz"
-    fi
+    local pkg_name="php-${php_version}.tar.gz"
 
     echo "$tmp_download_dir/$pkg_name"
 }
@@ -77,17 +72,12 @@ untar_path() {
     local version=$2
     local tmp_download_dir=$3
 
-    local php_type=$(get_php_type $version)
     local php_version=$(get_php_version $version)
 
-    if [ "${php_type}" = "PHP" ]; then
-        if version_5_1x_or_greater $version; then
-            local dir_name="php-${php_version}"
-        else
-            local dir_name="php"
-        fi
-    elif [ "${php_type}" = "LuaJIT" ]; then
+    if version_5_1x_or_greater $version; then
         local dir_name="php-${php_version}"
+    else
+        local dir_name="php"
     fi
 
     echo "$tmp_download_dir/$dir_name"
@@ -97,12 +87,7 @@ get_download_url() {
   local install_type=$1
   local version=$2
 
-  local php_type=$(get_php_type $version)
-
-  if [ "${php_type}" = "PHP" ]; then
-    echo "https://php.net/get/php-${version}.tar.gz/from/a/mirror"
-  fi
-
+  echo "https://php.net/get/php-${version}.tar.gz/from/a/mirror"
 }
 
 get_php_version() {
@@ -115,13 +100,6 @@ get_php_version() {
         else
             echo "${version_info[0]}-${version_info[1]}"
         fi
-    fi
-}
-
-get_php_type() {
-    IFS='-' read -a version_info <<< "$1"
-    if [ "${version_info[0]}" = "PHP" ]; then
-        echo "PHP"
     fi
 }
 
