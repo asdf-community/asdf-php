@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+set -o pipefail
+
 install_php() {
     local install_type=$1
     local version=$2
@@ -13,8 +15,10 @@ install_php() {
 
     local source_path=$(get_download_file_path $install_type $version $tmp_download_dir)
 
+    echo $version
     download_source $install_type $version $source_path
 
+    echo $source_path
     # Running this in a subshell because we don't to disturb the current
     # working directory.
     (
@@ -54,7 +58,8 @@ download_source() {
     local download_path=$3
     local download_url=$(get_download_url $install_type $version)
 
-    curl -Lo $download_path -C - $download_url
+    # curl -Lo $download_path -C - $download_url
+    curl -Lo $download_path $download_url
 }
 
 get_download_file_path() {
@@ -114,37 +119,38 @@ get_target() {
     fi
 }
 
-version_5x_or_greater() {
-     version=$1
-     IFS='.' read -a version_array <<< "$version"
-     major_version="${version_array[0]}"
+#version_5x_or_greater() {
+#     version=$1
+#     IFS='.' read -a version_array <<< "$version"
+#     major_version="${version_array[0]}"
+#
+#     if (( $major_version >= 5 )); then
+#         return 0
+#     else
+#         return 1
+#     fi
+#}
 
-     if (( $major_version >= 5 )); then
-         return 0
-     else
-         return 1
-     fi
-}
+#version_5_1x_or_greater() {
+#     version=$1
+#     IFS='.' read -a version_array <<< "$version"
+#     major_minor_version="${version_array[0]}0${version_array[1]}"
+#     if (( $major_minor_version >= 501 )); then
+#         return 0
+#     else
+#         return 1
+#     fi
+#}
 
-version_5_1x_or_greater() {
-     version=$1
-     IFS='.' read -a version_array <<< "$version"
-     major_minor_version="${version_array[0]}0${version_array[1]}"
-     if (( $major_minor_version >= 501 )); then
-         return 0
-     else
-         return 1
-     fi
-}
-version_5_2x_or_greater() {
-     version=$1
-     IFS='.' read -a version_array <<< "$version"
-     major_minor_version="${version_array[0]}0${version_array[1]}"
-     if (( $major_minor_version >= 502 )); then
-         return 0
-     else
-         return 1
-     fi
-}
+#version_5_2x_or_greater() {
+#     version=$1
+#     IFS='.' read -a version_array <<< "$version"
+#     major_minor_version="${version_array[0]}0${version_array[1]}"
+#     if (( $major_minor_version >= 502 )); then
+#         return 0
+#     else
+#         return 1
+#     fi
+#}
 
 install_php $ASDF_INSTALL_TYPE $ASDF_INSTALL_VERSION $ASDF_INSTALL_PATH
