@@ -15,15 +15,13 @@ install_php() {
 
     local source_path=$(get_download_file_path $install_type $version $tmp_download_dir)
 
-    echo $version
     download_source $install_type $version $source_path
 
-    echo $source_path
     # Running this in a subshell because we don't to disturb the current
     # working directory.
     (
         cd $(dirname $source_path)
-        tar zxvf $source_path || exit 1
+        tar -zxvf $source_path || exit 1
 
         cd $(untar_path $install_type $version $tmp_download_dir)
 
@@ -79,11 +77,7 @@ untar_path() {
 
     local php_version=$(get_php_version $version)
 
-    if version_5_1x_or_greater $version; then
-        local dir_name="php-${php_version}"
-    else
-        local dir_name="php"
-    fi
+    local dir_name="php-src-php-${php_version}"
 
     echo "$tmp_download_dir/$dir_name"
 }
@@ -92,19 +86,16 @@ get_download_url() {
   local install_type=$1
   local version=$2
 
-  echo "https://php.net/get/php-${version}.tar.gz/from/a/mirror"
+  echo "https://github.com/php/php-src/archive/php-${version}.tar.gz"
 }
 
 get_php_version() {
     IFS='-' read -a version_info <<< "$1"
 
-    if [ "${version_info[0]}" = "PHP" ]; then
-        # PHP
-        if [ "${#version_info[@]}" -eq 1 ]; then
-            echo "${version_info[0]}"
-        else
-            echo "${version_info[0]}-${version_info[1]}"
-        fi
+    if [ "${#version_info[@]}" -eq 1 ]; then
+        echo "${version_info[0]}"
+    else
+        echo "${version_info[0]}-${version_info[1]}"
     fi
 }
 
@@ -125,17 +116,6 @@ get_target() {
 #     major_version="${version_array[0]}"
 #
 #     if (( $major_version >= 5 )); then
-#         return 0
-#     else
-#         return 1
-#     fi
-#}
-
-#version_5_1x_or_greater() {
-#     version=$1
-#     IFS='.' read -a version_array <<< "$version"
-#     major_minor_version="${version_array[0]}0${version_array[1]}"
-#     if (( $major_minor_version >= 501 )); then
 #         return 0
 #     else
 #         return 1
