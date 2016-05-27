@@ -29,14 +29,14 @@ install_php() {
         target=$(get_target)
 
         # Build PHP
-        if version_5x_or_greater $version; then
+        #if version_5x_or_greater $version; then
             make $target || exit 1
             make test || exit 1
             make local || exit 1
-        else
-            make || exit 1
-            make install INSTALL_ROOT=install || exit 1
-        fi
+        #else
+        #    make || exit 1
+        #    make install INSTALL_ROOT=install || exit 1
+        #fi
 
         # `make local` target changed in version 5x
         if version_5_2x_or_greater $version; then
