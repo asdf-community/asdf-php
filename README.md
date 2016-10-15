@@ -11,7 +11,7 @@ PHP plugin for [asdf version manager](https://github.com/HashNuke/asdf).
 ## Install
 
 ```
-asdf plugin-add php https://github.com/Stratus3D/asdf-php.git
+asdf plugin-add php https://github.com/odarriba/asdf-php.git
 ```
 
 ### Linux
