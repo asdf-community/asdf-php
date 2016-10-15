@@ -14,6 +14,7 @@ install_php() {
     fi
 
     local source_path=$(get_download_file_path $install_type $version $tmp_download_dir)
+    local configure_options="$(construct_configure_options $install_path)"
 
     download_source $install_type $version $source_path
 
@@ -26,28 +27,27 @@ install_php() {
         cd $(untar_path $install_type $version $tmp_download_dir)
 
         # Target is OS-specific
-        target=$(get_target)
+        # target=$(get_target)
 
         # Build PHP
-        #if version_5x_or_greater $version; then
-            make $target || exit 1
-            make test || exit 1
-            make local || exit 1
-        #else
-        #    make || exit 1
-        #    make install INSTALL_ROOT=install || exit 1
-        #fi
-
-        # `make local` target changed in version 5x
-        if version_5_2x_or_greater $version; then
-            cp -r install/* $install_path || exit 1
-        elif version_5x_or_greater $version; then
-            cp -r * $install_path || exit 1
-        else
-            # We install version 4 and lesser in install/
-            cp -r install/* $install_path || exit 1
-        fi
+        ./buildconf --force || exit 1
+        ./configure $configure_options || exit 1
+        make || exit 1
+        make test || exit 1
+        make install || exit 1
     )
+}
+
+construct_configure_options() {
+  local install_path=$1
+
+  if [ "$PHP_CONFIGURE_OPTIONS" = "" ]; then
+    local configure_options="--prefix=$install_path"
+  else
+    local configure_options="$PHP_CONFIGURE_OPTIONS --prefix=$install_path"
+  fi
+
+  echo "$configure_options"
 }
 
 download_source() {
@@ -99,16 +99,16 @@ get_php_version() {
     fi
 }
 
-get_target() {
-    os=$(uname -s)
-
-    # If on OSX (Darwin) then the target is macosx
-    if [ $os = "Darwin" ]; then
-        echo "macosx"
-    else # Otherwise we assume Linux
-        echo "linux"
-    fi
-}
+# get_target() {
+#     os=$(uname -s)
+#
+#     # If on OSX (Darwin) then the target is macosx
+#     if [ $os = "Darwin" ]; then
+#         echo "macosx"
+#     else # Otherwise we assume Linux
+#         echo "linux"
+#     fi
+# }
 
 #version_5x_or_greater() {
 #     version=$1
