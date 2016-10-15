@@ -1,5 +1,7 @@
 # asdf-php
- PHP plugin for [asdf version manager](https://github.com/HashNuke/asdf).
+
+PHP plugin for [asdf version manager](https://github.com/HashNuke/asdf).
+
 *Original version of this plugin created by [@Stratus3D](https://github.com/Stratus3D)*
 
 ## Why using this plug-in?
