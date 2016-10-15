@@ -16,8 +16,6 @@ install_php() {
     local source_path=$(get_download_file_path $install_type $version $tmp_download_dir)
     local configure_options="$(construct_configure_options $install_path)"
 
-    unset ASDF_PKG_MISSING
-
     download_source $install_type $version $source_path
 
     # Running this in a subshell because we don't to disturb the current
@@ -43,7 +41,7 @@ install_php() {
 construct_configure_options() {
   local install_path=$1
 
-  global_config="--prefix=$install_path --sysconfdir=$install_path --with-config-file-path=$install_path --with-config-file-scan-dir=$install_path/conf.d --enable-bcmath --enable-calendar --enable-dba --enable-exif --enable-ftp --enable-gd-native-ttf --enable-mbregex --enable-mbstring --enable-shmop --enable-soap --enable-sockets --enable-sysvmsg --enable-sysvsem --enable-sysvshm --enable-wddx --enable-zip --with-gd --with-libedit --with-mhash --with-xmlrpc --without-gmp --without-snmp"
+  global_config="--prefix=$install_path --sysconfdir=$install_path --with-config-file-path=$install_path --with-config-file-scan-dir=$install_path/conf.d --enable-bcmath --enable-calendar --enable-dba --enable-exif --enable-ftp --enable-gd-native-ttf --enable-intl --enable-mbregex --enable-mbstring --enable-shmop --enable-soap --enable-sockets --enable-sysvmsg --enable-sysvsem --enable-sysvshm --enable-wddx --enable-zip --with-gd --with-libedit --with-mhash --with-xmlrpc --without-gmp --without-snmp --with-mysql=mysqlnd --with-mysqli=mysqlnd --with-pdo-mysql=mysqlnd --enable-mysqlnd"
 
   if [ "$PHP_CONFIGURE_OPTIONS" = "" ]; then
     local configure_options="$(os_based_configure_options) $global_config"
@@ -82,18 +80,23 @@ os_based_configure_options() {
     exit_if_homebrew_not_installed
 
     local freetype_path=$(homebrew_package_path freetype)
+    local bison27_path=$(homebrew_package_path bison27)
     local gettext_path=$(homebrew_package_path gettext)
     local icu4c_path=$(homebrew_package_path icu4c)
     local jpeg_path=$(homebrew_package_path jpeg)
     local libpng_path=$(homebrew_package_path libpng)
     local openssl_path=$(homebrew_package_path openssl)
-    local mysql_path=$(homebrew_package_path mysql)
+    local zlib_path=$(homebrew_package_path zlib)
     local readline_path=$(homebrew_package_path readline)
 
     if [ "$freetype_path" = "" ]; then
       export ASDF_PKG_MISSING="freetype"
     else
       configure_options="--with-freetype-dir=$freetype_path"
+    fi
+
+    if [ "$bison27_path" = "" ]; then
+      export ASDF_PKG_MISSING="$ASDF_PKG_MISSING bison27"
     fi
 
     if [ "$gettext_path" = "" ]; then
@@ -126,8 +129,10 @@ os_based_configure_options() {
       configure_options="$configure_options --with-openssl=$openssl_path"
     fi
 
-    if [ "$mysql_path" != "" ]; then
-      configure_options="$configure_options --with-mysql=$mysql_path"
+    if [ "$zlib_path" = "" ]; then
+      export ASDF_PKG_MISSING="$ASDF_PKG_MISSING zlib"
+    else
+      configure_options="$configure_options --with-zlib-dir=$zlib_path"
     fi
 
     if [ "$readline_path" != "" ]; then
