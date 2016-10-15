@@ -203,10 +203,10 @@ versions_list=(
 )
 
 versions=""
+sorted_versions=($(printf '%s\n' "${versions_list[@]}"|sort))
 
 # Concatenate all the versions together separated by spaces
-for version in "${versions_list[@]}"
-do
+for version in "${sorted_versions[@]}";  do
       versions="${versions} ${version}"
 done
 
