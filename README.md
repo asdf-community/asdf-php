@@ -12,7 +12,7 @@ Original plug-in appears to be unmaintained and it doesn't work anymore (at leas
 asdf plugin-add php https://github.com/Stratus3D/asdf-php.git
 ```
 
-## Linux
+### Linux
 
 You may need this libraries and packages to be able to compile PHP compiler versions:
 
