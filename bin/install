@@ -14,6 +14,7 @@ install_php() {
     fi
 
     local source_path=$(get_download_file_path $install_type $version $tmp_download_dir)
+    local configure_options="$(construct_configure_options $install_path)"
 
     download_source $install_type $version $source_path
 
@@ -26,28 +27,120 @@ install_php() {
         cd $(untar_path $install_type $version $tmp_download_dir)
 
         # Target is OS-specific
-        target=$(get_target)
+        # target=$(get_target)
 
         # Build PHP
-        #if version_5x_or_greater $version; then
-            make $target || exit 1
-            make test || exit 1
-            make local || exit 1
-        #else
-        #    make || exit 1
-        #    make install INSTALL_ROOT=install || exit 1
-        #fi
-
-        # `make local` target changed in version 5x
-        if version_5_2x_or_greater $version; then
-            cp -r install/* $install_path || exit 1
-        elif version_5x_or_greater $version; then
-            cp -r * $install_path || exit 1
-        else
-            # We install version 4 and lesser in install/
-            cp -r install/* $install_path || exit 1
-        fi
+        ./buildconf --force || exit 1
+        ./configure $configure_options || exit 1
+        make || exit 1
+        # make test || exit 1
+        make install || exit 1
     )
+}
+
+construct_configure_options() {
+  local install_path=$1
+
+  global_config="--prefix=$install_path --sysconfdir=$install_path --with-config-file-path=$install_path --with-config-file-scan-dir=$install_path/conf.d --enable-bcmath --enable-calendar --enable-dba --enable-exif --enable-ftp --enable-gd-native-ttf --enable-intl --enable-mbregex --enable-mbstring --enable-shmop --enable-soap --enable-sockets --enable-sysvmsg --enable-sysvsem --enable-sysvshm --enable-wddx --enable-zip --with-gd --with-libedit --with-mhash --with-xmlrpc --without-gmp --without-snmp --with-mysql=mysqlnd --with-mysqli=mysqlnd --with-pdo-mysql=mysqlnd --enable-mysqlnd"
+
+  if [ "$PHP_CONFIGURE_OPTIONS" = "" ]; then
+    local configure_options="$(os_based_configure_options) $global_config"
+  else
+    local configure_options="$PHP_CONFIGURE_OPTIONS $global_config"
+  fi
+
+  echo "$configure_options"
+}
+
+homebrew_package_path() {
+  local package_name=$1
+
+  if [ "$(brew ls --versions $package_name)" = "" ]; then
+    echo ""
+  else
+    echo "$(brew --prefix $package_name)"
+  fi
+}
+
+
+exit_if_homebrew_not_installed() {
+  if [ "$(brew --version 2>/dev/null)" = "" ]; then
+    echo "ERROR: Please install homebrew for OSX"
+    exit 1
+  fi
+}
+
+
+os_based_configure_options() {
+  local operating_system=$(uname -a)
+  local configure_options=""
+
+  if [[ "$operating_system" =~ "Darwin" ]]; then
+
+    exit_if_homebrew_not_installed
+
+    local freetype_path=$(homebrew_package_path freetype)
+    local bison27_path=$(homebrew_package_path bison27)
+    local gettext_path=$(homebrew_package_path gettext)
+    local icu4c_path=$(homebrew_package_path icu4c)
+    local jpeg_path=$(homebrew_package_path jpeg)
+    local libpng_path=$(homebrew_package_path libpng)
+    local openssl_path=$(homebrew_package_path openssl)
+    local zlib_path=$(homebrew_package_path zlib)
+    local readline_path=$(homebrew_package_path readline)
+
+    if [ "$freetype_path" = "" ]; then
+      export ASDF_PKG_MISSING="freetype"
+    else
+      configure_options="--with-freetype-dir=$freetype_path"
+    fi
+
+    if [ "$bison27_path" = "" ]; then
+      export ASDF_PKG_MISSING="$ASDF_PKG_MISSING bison27"
+    fi
+
+    if [ "$gettext_path" = "" ]; then
+      export ASDF_PKG_MISSING="$ASDF_PKG_MISSING gettext"
+    else
+      configure_options="$configure_options --with-gettext=$gettext_path"
+    fi
+
+    if [ "$icu4c_path" = "" ]; then
+      export ASDF_PKG_MISSING="$ASDF_PKG_MISSING icu4c"
+    else
+      configure_options="$configure_options --with-icu-dir=$icu4c_path"
+    fi
+
+    if [ "$jpeg_path" = "" ]; then
+      export ASDF_PKG_MISSING="$ASDF_PKG_MISSING jpeg"
+    else
+      configure_options="$configure_options --with-jpeg-dir=$jpeg_path"
+    fi
+
+    if [ "$libpng_path" = "" ]; then
+      export ASDF_PKG_MISSING="$ASDF_PKG_MISSING libpng"
+    else
+      configure_options="$configure_options --with-png-dir=$libpng_path"
+    fi
+
+    if [ "$openssl_path" = "" ]; then
+      export ASDF_PKG_MISSING="$ASDF_PKG_MISSING openssl"
+    else
+      configure_options="$configure_options --with-openssl=$openssl_path"
+    fi
+
+    if [ "$zlib_path" = "" ]; then
+      export ASDF_PKG_MISSING="$ASDF_PKG_MISSING zlib"
+    else
+      configure_options="$configure_options --with-zlib-dir=$zlib_path"
+    fi
+
+    if [ "$readline_path" != "" ]; then
+      configure_options="$configure_options --with-readline-dir=$readline_path"
+    fi
+  fi
+
+  echo $configure_options
 }
 
 download_source() {
@@ -99,16 +192,16 @@ get_php_version() {
     fi
 }
 
-get_target() {
-    os=$(uname -s)
-
-    # If on OSX (Darwin) then the target is macosx
-    if [ $os = "Darwin" ]; then
-        echo "macosx"
-    else # Otherwise we assume Linux
-        echo "linux"
-    fi
-}
+# get_target() {
+#     os=$(uname -s)
+#
+#     # If on OSX (Darwin) then the target is macosx
+#     if [ $os = "Darwin" ]; then
+#         echo "macosx"
+#     else # Otherwise we assume Linux
+#         echo "linux"
+#     fi
+# }
 
 #version_5x_or_greater() {
 #     version=$1
