@@ -1,6 +1,8 @@
 # asdf-php
  PHP plugin for [asdf version manager](https://github.com/HashNuke/asdf).
 
+ *Original version of this plugin created by @Stratus3D*
+
 ## Install
 
 ```
@@ -34,12 +36,8 @@ brew link --force bison27
 Installing during development:
 
 ```
-cp -r . ~/.asdf/plugins/php
+ln -s . ~/.asdf/plugins/php
 ```
-
-####PHP Download Mirrors
-
-I considered trying to use mirrors when downloading the source code. It seemed simpler to just download the release from GitHub. Example code: https://gist.github.com/lox/9152137
 
 ## Use
 
