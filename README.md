@@ -9,8 +9,10 @@ asdf plugin-add php https://github.com/Stratus3D/asdf-php.git
 
 ## Linux
 
+You may need this libraries and packages to be able to compile PHP compiler versions:
+
 ```
-sudo apt-get install curl build-essential autoconf libjpeg-dev libpng12-dev openssl libssl-dev libcurl4-openssl-dev libreadline-dev libedit-dev zlib1g-dev libicu-dev libxml2-dev gettext bison libmysqlclient-dev libpq-dev
+sudo apt-get install curl build-essential autoconf libjpeg-dev libpng12-dev openssl libssl-dev libcurl4-openssl-dev pkg-config libsslcommon2-dev libreadline-dev libedit-dev zlib1g-dev libicu-dev libxml2-dev gettext bison libmysqlclient-dev libpq-dev
 ```
 
 ### macOS
