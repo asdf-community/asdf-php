@@ -7,12 +7,20 @@
 asdf plugin-add php https://github.com/Stratus3D/asdf-php.git
 ```
 
-### macOS
+## Linux
 
-In oprder to compile PHP on macOS machines, you must install some brew packages first:
+You may need this libraries and packages to be able to compile PHP compiler versions:
 
 ```
-brew install freetype bison27 gettext icu4c jpeg libpng openssl readline homebrew/dupes/zlib
+sudo apt-get install curl build-essential autoconf libjpeg-dev libpng12-dev openssl libssl-dev libcurl4-openssl-dev pkg-config libsslcommon2-dev libreadline-dev libedit-dev zlib1g-dev libicu-dev libxml2-dev gettext bison libmysqlclient-dev libpq-dev
+```
+
+### macOS
+
+In order to compile PHP on macOS machines, you must install some brew packages first:
+
+```
+brew install freetype bison27 gettext icu4c jpeg libpng openssl readline homebrew/dupes/zlib curl
 ```
 
 and, in order to compile 5.x versions of PHP, you **must** link `bison27` package:

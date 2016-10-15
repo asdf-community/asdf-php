@@ -86,6 +86,8 @@ os_based_configure_options() {
     local jpeg_path=$(homebrew_package_path jpeg)
     local libpng_path=$(homebrew_package_path libpng)
     local openssl_path=$(homebrew_package_path openssl)
+    local curl_path=$(homebrew_package_path curl)
+    local libxml2_path=$(homebrew_package_path libxml2)
     local zlib_path=$(homebrew_package_path zlib)
     local readline_path=$(homebrew_package_path readline)
 
@@ -126,7 +128,19 @@ os_based_configure_options() {
     if [ "$openssl_path" = "" ]; then
       export ASDF_PKG_MISSING="$ASDF_PKG_MISSING openssl"
     else
-      configure_options="$configure_options --with-openssl=$openssl_path"
+      configure_options="$configure_options --with-openssl-dir=$openssl_path"
+    fi
+
+    if [ "$curl_path" = "" ]; then
+      export ASDF_PKG_MISSING="$ASDF_PKG_MISSING curl"
+    else
+      configure_options="$configure_options --with-curl=$curl_path"
+    fi
+
+    if [ "$libxml2_path" = "" ]; then
+      export ASDF_PKG_MISSING="$ASDF_PKG_MISSING libxml2"
+    else
+      configure_options="$configure_options --with-libxml-dir=$libxml2_path"
     fi
 
     if [ "$zlib_path" = "" ]; then
@@ -136,8 +150,10 @@ os_based_configure_options() {
     fi
 
     if [ "$readline_path" != "" ]; then
-      configure_options="$configure_options --with-readline-dir=$readline_path"
+      configure_options="$configure_options --with-readline=$readline_path"
     fi
+  else
+    configure_options="--with-openssl --with-curl --with-zlib --with-readline --with-gettext"
   fi
 
   echo $configure_options
