@@ -1,10 +1,10 @@
 # asdf-php
  PHP plugin for [asdf version manager](https://github.com/HashNuke/asdf).
-*Original version of this plugin created by @Stratus3D*
+*Original version of this plugin created by [@Stratus3D](https://github.com/Stratus3D)*
 
 ## Why using this plug-in?
 
-Original plug-in appears to be unmaintained and it doesn't work anymore (at least on OSX), so I fixed it to provide compatibility and improve it's documentation.
+[Original plug-in](https://github.com/Stratus3D/asdf-php) appears to be unmaintained and it doesn't work anymore (at least on OSX), so I fixed it to provide compatibility and improve it's documentation.
 
 ## Install
 
@@ -36,7 +36,7 @@ brew link --force bison27
 
 ## Development
 
-Installing during development:
+To modify this plugin into your `asdf` installation and see changes live, just create a symlink:
 
 ```
 ln -s . ~/.asdf/plugins/php
