@@ -22,7 +22,7 @@ install_php() {
     # working directory.
     (
         cd $(dirname $source_path)
-        tar -zxvf $source_path || exit 1
+        tar -zxf $source_path || exit 1
 
         cd $(untar_path $install_type $version $tmp_download_dir)
 
