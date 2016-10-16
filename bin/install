@@ -208,38 +208,4 @@ get_php_version() {
     fi
 }
 
-# get_target() {
-#     os=$(uname -s)
-#
-#     # If on OSX (Darwin) then the target is macosx
-#     if [ $os = "Darwin" ]; then
-#         echo "macosx"
-#     else # Otherwise we assume Linux
-#         echo "linux"
-#     fi
-# }
-
-#version_5x_or_greater() {
-#     version=$1
-#     IFS='.' read -a version_array <<< "$version"
-#     major_version="${version_array[0]}"
-#
-#     if (( $major_version >= 5 )); then
-#         return 0
-#     else
-#         return 1
-#     fi
-#}
-
-#version_5_2x_or_greater() {
-#     version=$1
-#     IFS='.' read -a version_array <<< "$version"
-#     major_minor_version="${version_array[0]}0${version_array[1]}"
-#     if (( $major_minor_version >= 502 )); then
-#         return 0
-#     else
-#         return 1
-#     fi
-#}
-
 install_php $ASDF_INSTALL_TYPE $ASDF_INSTALL_VERSION $ASDF_INSTALL_PATH

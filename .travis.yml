@@ -1,7 +1,6 @@
 language: c
 script: asdf plugin-test php https://github.com/odarriba/asdf-php.git
 before_install:
-- echo `curl -u $GITHUB_API_USER:$GITHUB_API_KEY-s https://api.github.com/repos/php/php-src/git/refs/tags`
 - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update; fi
 - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install freetype bison27 gettext
   icu4c jpeg libpng openssl readline homebrew/dupes/zlib curl; fi
