@@ -6,8 +6,7 @@ versions=$(curl -s https://api.github.com/repos/php/php-src/git/refs/tags | # Fe
           grep -Ev "beta|alpha|RC" | # Remove betas, alphas and RCs
           sed 's/\"ref\"://' | # Remove '"ref":'
           sed 's/\"refs\/tags\/php-//' | # Remove '"refs/tags/php-"'
-          sed 's/\",//' | # Remove last '",'
-          sort -V) # Sort by version
+          sed 's/\",//') # Remove last '",'
 
 # As per the documentation, all versions should be in a single line separated
 # by spaces. We use `xargs` for this.
