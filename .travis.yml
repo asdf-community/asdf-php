@@ -1,15 +1,22 @@
 language: c
 script: asdf plugin-test php https://github.com/odarriba/asdf-php.git
 before_install:
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update; fi
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install freetype bison27 gettext icu4c jpeg libpng openssl readline homebrew/dupes/zlib curl; fi
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew link --force bison27; fi
-  - curl -s https://api.github.com/repos/php/php-src/git/refs/tags | grep '"ref":' | grep 'php-' | grep -Ev "beta|alpha|RC" | sed 's/\"ref\"://' | sed 's/\"refs\/tags\/php-//' | sed 's/\",//'
-  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get update -qq; fi
-  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get install curl build-essential autoconf libjpeg-dev libpng12-dev openssl libssl-dev libcurl4-openssl-dev pkg-config libsslcommon2-dev libreadline-dev libedit-dev zlib1g-dev libicu-dev libxml2-dev gettext bison libmysqlclient-dev libpq-dev -y; fi
+- if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update; fi
+- if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install freetype bison27 gettext
+  icu4c jpeg libpng openssl readline homebrew/dupes/zlib curl; fi
+- if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew link --force bison27; fi
+- if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get update -qq; fi
+- if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get install curl build-essential
+  autoconf libjpeg-dev libpng12-dev openssl libssl-dev libcurl4-openssl-dev pkg-config
+  libsslcommon2-dev libreadline-dev libedit-dev zlib1g-dev libicu-dev libxml2-dev
+  gettext bison libmysqlclient-dev libpq-dev -y; fi
 before_script:
-  - git clone https://github.com/asdf-vm/asdf.git
-  - . asdf/asdf.sh
+- git clone https://github.com/asdf-vm/asdf.git
+- ". asdf/asdf.sh"
 os:
-  - linux
-  - osx
+- linux
+- osx
+env:
+  global:
+    - GITHUB_API_USER=odarriba
+    - secure: OJdnCTHZmVAsAhBJ+Y2E+khbbOhRECLD9z1VaS9/pWcQVSM4h+o0pITXDYQsgMVRSA56B8D9fIgkG9OmZ3mqu8/1O1N0zQkZ8O5v/WBHjevja688Jfft8ZY6GZAW5jsH96GzjNHLHyc+qyH1EUSAi0t4iMM03DW6dr+iEoIh1j1z64TGq3uOZhJdyfIw7Ld+zU/L0z8lJFTAi1Jq3FP+Ei+oMwSdxr8mhcl5MHL1EbltrbWgImSCLJ7HWIRaHbLxUKidfrqzihITeojc/QDnUAS9fu50Q05LNmvTnWdKGEQEe2oJYU8G+KQC3eSrvqo5Lyrj9K4eyOANn+2yK8x2onnhHoCsSDebmsxqm/+gYrI8plp+hLeutkBV3OC2wBAoKo2pVXoxLYTyuLITrm0f2HMVp3h38hS4URIA/HZ0DHZ0AvYoMCwjwkV/kSS1mX4V8Xn0qqjutQVo0POqchSTBNu9+IDX/OJ38y4fjVHbvd/HsYGfAuYTYNeP/sLSayasVYGt+hYn2cAECYbLmTs3fnl+2COcgkruFmDwglp2PW508Z6sxR4LGJp3kUCUcYobmoFdEoHVMEXi4YE29yIAJBWSuZIkNup4OcH/g2YZ1t2Gr6GkKI0m5Eg19MVL1ShW8GuKBl6AyLKSZc+SeG/GRT7mie8yhW9eX21WH8U5ioI=

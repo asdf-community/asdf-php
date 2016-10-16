@@ -1,6 +1,12 @@
 #!/usr/bin/env bash
 
-versions=$(curl -s https://api.github.com/repos/php/php-src/git/refs/tags | # Fetch all tags
+if [ "$GITHUB_API_USER" = "" ] || [ "$GITHUB_API_KEY" = "" ]; then
+  auth=""
+else
+  auth="-u $GITHUB_API_USER:$GITHUB_API_KEY"
+fi
+
+versions=$(curl $auth -s https://api.github.com/repos/php/php-src/git/refs/tags | # Fetch all tags
           grep '"ref":' | # Filter by refs
           grep 'php-' | # Filter only those related to php-xxxx
           grep -Ev "beta|alpha|RC" | # Remove betas, alphas and RCs
