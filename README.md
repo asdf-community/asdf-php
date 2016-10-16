@@ -56,7 +56,9 @@ Feel free to create an issue or pull request if you find a bug.
 
 ## Issues
 
-No known issues
+### No available versions shown
+
+This could be due to GitHub API quota limits. To solve it, you just need to specify `GITHUB_API_USER` and `GITHUB_API_KEY` with your username and a [Personal Access Token](https://github.com/settings/tokens), so the `list-all` command can use it to fetch available versions.
 
 ## License
 MIT License
