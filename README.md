@@ -16,6 +16,8 @@ PHP plugin for [asdf version manager](https://github.com/HashNuke/asdf).
 asdf plugin-add php https://github.com/odarriba/asdf-php.git
 ```
 
+**Please, remember installing the common required libraries that can be found on the `asdf` README. They are necessary to build PHP versions too!**
+
 ### Linux
 
 You may need this libraries and packages to be able to compile PHP compiler versions:
@@ -32,11 +34,21 @@ In order to compile PHP on macOS machines, you must install some brew packages f
 brew install freetype bison@2.7 gettext icu4c jpeg libpng openssl readline homebrew/dupes/zlib
 ```
 
-and, in order to compile 5.x versions of PHP, you **must** link `bison27` package:
+and, in order to compile 5.x versions of PHP, you **must** link `bison27` and `icu4c` packages:
 
 ```
-brew link --force bison@2.7
+$ brew link --force bison@2.7
+$ brew link --force icu4c
 ```
+
+**Important note**: There seems to be a bug with PHP `configure` file on recent versions (> 7.1.4) when using on OSX environments. As can be seen in [this PR](https://github.com/phpbrew/phpbrew/issues/876#issuecomment-301553990), it's needed to disable gettext at build time to work, and later on impate the module manually.
+
+To disable it, just execute this **before** run the `asdf install` command:
+
+```
+$ export PHP_CONFIGURE_OPTIONS='--disable-gettext'
+```
+
 
 ## Development
 
