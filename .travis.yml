@@ -2,10 +2,14 @@ language: c
 script: asdf plugin-test php https://github.com/odarriba/asdf-php.git
 before_install:
 - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update; fi
-- if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install freetype bison bison27 gettext
-  icu4c jpeg libiconv libpng openssl readline homebrew/dupes/zlib curl; fi
+- if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew outdated jpeg || brew upgrade jpeg; fi
+- if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew outdated openssl || brew upgrade openssl; fi
+- if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew outdated readline || brew upgrade readline; fi
+- if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install freetype bison bison27 gettext icu4c libiconv libpng
+  homebrew/dupes/zlib curl; fi
+- if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then export PKG_CONFIG_PATH='/usr/local/opt/openssl/lib/pkgconfig'; fi
 - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then export PHP_CONFIGURE_OPTIONS='--with-iconv=$(brew --prefix libiconv) --with-openssl=$(brew --prefix openssl)'; fi
-- if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then export PATH='/usr/local/opt/icu4c/bin:/usr/local/opt/icu4c/sbin:/usr/local/opt/bison/bin:$PATH'; fi
+- if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then export PATH="/usr/local/opt/icu4c/bin:/usr/local/opt/icu4c/sbin:/usr/local/opt/bison/bin:$PATH"; fi
 - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get update -qq; fi
 - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get install curl build-essential
   autoconf libjpeg-dev libpng12-dev openssl libssl-dev libcurl4-openssl-dev pkg-config
