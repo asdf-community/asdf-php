@@ -34,13 +34,16 @@ In order to compile PHP on macOS machines, you must install some brew packages f
 brew install freetype bison bison27 gettext icu4c jpeg libiconv libpng openssl readline homebrew/dupes/zlib
 ```
 
-Use environment variables to instruct autoconf on where to find the libraries you installed using homebrew:
+Use environment variables to instruct autoconf on where to find the libraries you installed using homebrew. Note that:
+
+* for PHP 5.6, you must use `brew --prefix bison@2.7` in your PATH
+* for PHP 7.x, you must use `brew --prefix bison` in your PATH
+
+So replace if necessary:
 
 ```
 PATH="/usr/local/opt/icu4c/bin:/usr/local/opt/icu4c/sbin:/usr/local/opt/bison/bin:$PATH" PHP_CONFIGURE_OPTIONS="--with-iconv=$(brew --prefix libiconv) --with-openssl=$(brew --prefix openssl)" asdf install php <version>
 ```
-
-For PHP 5.x, replace `/usr/local/opt/bison/` in the line above with `/usr/local/opt/bison@2.7/`
 
 **Important note**: There seems to be a bug with PHP `configure` file on recent versions (> 7.1.4) when using on OSX environments. As can be seen in [this PR](https://github.com/phpbrew/phpbrew/issues/876#issuecomment-301553990), it's needed to disable gettext at build time to work, and later on impate the module manually.
 
