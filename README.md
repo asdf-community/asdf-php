@@ -31,14 +31,18 @@ sudo apt-get install curl build-essential autoconf libjpeg-dev libpng12-dev open
 In order to compile PHP on macOS machines, you must install some brew packages first:
 
 ```
-brew install freetype bison@2.7 gettext icu4c jpeg libpng openssl readline homebrew/dupes/zlib
+brew install freetype bison bison27 gettext icu4c jpeg libiconv libpng openssl readline homebrew/dupes/zlib
 ```
 
-and, in order to compile 5.x versions of PHP, you **must** link `bison27` and `icu4c` packages:
+Use environment variables to instruct autoconf on where to find the libraries you installed using homebrew. Note that:
+
+* for PHP 5.6, you must use `brew --prefix bison@2.7` in your PATH
+* for PHP 7.x, you must use `brew --prefix bison` in your PATH
+
+So replace if necessary:
 
 ```
-$ brew link --force bison@2.7
-$ brew link --force icu4c
+PATH="$(brew --prefix bison):$(brew --prefix icu4c)/bin:$(brew --prefix icu4c)/sbin:$PATH" PHP_CONFIGURE_OPTIONS="--with-iconv=$(brew --prefix libiconv) --with-openssl=$(brew --prefix openssl)" asdf install php <version>
 ```
 
 **Important note**: There seems to be a bug with PHP `configure` file on recent versions (> 7.1.4) when using on OSX environments. As can be seen in [this PR](https://github.com/phpbrew/phpbrew/issues/876#issuecomment-301553990), it's needed to disable gettext at build time to work, and later on impate the module manually.
@@ -65,6 +69,8 @@ Check the [asdf](https://github.com/HashNuke/asdf) readme for instructions on ho
 ## Contributing
 
 Feel free to create an issue or pull request if you find a bug.
+
+Note that the Travis builds for your PR *will* fail: https://github.com/odarriba/asdf-php/pull/4#issuecomment-319123603
 
 ## Issues
 
