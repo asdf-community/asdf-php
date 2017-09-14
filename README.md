@@ -42,7 +42,7 @@ Use environment variables to instruct autoconf on where to find the libraries yo
 So replace if necessary:
 
 ```
-PATH="/usr/local/opt/icu4c/bin:/usr/local/opt/icu4c/sbin:/usr/local/opt/bison/bin:$PATH" PHP_CONFIGURE_OPTIONS="--with-iconv=$(brew --prefix libiconv) --with-openssl=$(brew --prefix openssl)" asdf install php <version>
+PATH="$(brew --prefix bison):$(brew --prefix icu4c)/bin:$(brew --prefix icu4c)/sbin:$PATH" PHP_CONFIGURE_OPTIONS="--with-iconv=$(brew --prefix libiconv) --with-openssl=$(brew --prefix openssl)" asdf install php <version>
 ```
 
 **Important note**: There seems to be a bug with PHP `configure` file on recent versions (> 7.1.4) when using on OSX environments. As can be seen in [this PR](https://github.com/phpbrew/phpbrew/issues/876#issuecomment-301553990), it's needed to disable gettext at build time to work, and later on impate the module manually.

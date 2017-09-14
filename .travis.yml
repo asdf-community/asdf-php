@@ -9,7 +9,7 @@ before_install:
   homebrew/dupes/zlib curl; fi
 - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then export PKG_CONFIG_PATH='/usr/local/opt/openssl/lib/pkgconfig'; fi
 - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then export PHP_CONFIGURE_OPTIONS='--with-iconv=$(brew --prefix libiconv) --with-openssl=$(brew --prefix openssl)'; fi
-- if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then export PATH="/usr/local/opt/icu4c/bin:/usr/local/opt/icu4c/sbin:/usr/local/opt/bison/bin:$PATH"; fi
+- if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then export PATH="$(brew --prefix bison):$(brew --prefix icu4c)/bin:$(brew --prefix icu4c)/sbin:$PATH"; fi
 - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get update -qq; fi
 - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get install curl build-essential
   autoconf libjpeg-dev libpng12-dev openssl libssl-dev libcurl4-openssl-dev pkg-config
