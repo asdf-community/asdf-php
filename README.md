@@ -26,6 +26,12 @@ You may need this libraries and packages to be able to compile PHP compiler vers
 sudo apt-get install curl build-essential autoconf libjpeg-dev libpng12-dev openssl libssl-dev libcurl4-openssl-dev pkg-config libsslcommon2-dev libreadline-dev libedit-dev zlib1g-dev libicu-dev libxml2-dev gettext bison libmysqlclient-dev libpq-dev
 ```
 
+#### Ubuntu 18.04
+
+```
+sudo apt install curl build-essential libjpeg-dev libpng-dev openssl libcurl4-openssl-dev pkg-config libedit-dev zlib1g-dev libicu-dev libxml2-dev gettext bison libmysqlclient-dev libpq-dev
+```
+
 ### macOS
 
 In order to compile PHP on macOS machines, you must install some brew packages first:
