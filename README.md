@@ -6,6 +6,14 @@ PHP plugin for [asdf version manager](https://github.com/HashNuke/asdf).
 
 *Original version of this plugin created by [@Stratus3D](https://github.com/Stratus3D)*
 
+## Note: PHP-PEAR
+
+PHP Pear is down without ETA for when the server will be back. To install PHP without Pear you can specify a `PHP_WITHOUT_PEAR` variable with any value (except no), eg:
+
+```
+PHP_WITHOUT_PEAR=yes asdf install php 7.2.14
+```
+
 ## Why using this plug-in?
 
 [Original plug-in](https://github.com/Stratus3D/asdf-php) appears to be unmaintained and it doesn't work anymore (at least on OSX), so I fixed it to provide compatibility and improve it's documentation.
