@@ -45,7 +45,7 @@ sudo apt install curl build-essential libjpeg-dev libpng-dev openssl libcurl4-op
 In order to compile PHP on macOS machines, you must install some brew packages first:
 
 ```
-brew install freetype bison bison27 gettext icu4c jpeg libiconv libpng openssl readline homebrew/dupes/zlib
+brew install freetype bison bison27 gettext icu4c jpeg libiconv libpng openssl readline zlib
 ```
 
 Use environment variables to instruct autoconf on where to find the libraries you installed using homebrew. Note that:
