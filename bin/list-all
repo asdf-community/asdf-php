@@ -1,9 +1,8 @@
 #!/usr/bin/env bash
 
-if [ "$GITHUB_API_USER" = "" ] || [ "$GITHUB_API_KEY" = "" ]; then
-  auth=""
-else
-  auth="-u $GITHUB_API_USER:$GITHUB_API_KEY"
+auth=""
+if [ -n "$GITHUB_API_TOKEN" ]; then
+  auth="-H 'Authorization: token $GITHUB_API_TOKEN'"
 fi
 
 versions=$(curl $auth -s https://api.github.com/repos/php/php-src/git/refs/tags | # Fetch all tags
