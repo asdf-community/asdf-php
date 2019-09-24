@@ -9,7 +9,6 @@ fi
 versions=$(curl $auth -s https://api.github.com/repos/php/php-src/git/refs/tags | # Fetch all tags
           grep '"ref":' | # Filter by refs
           grep 'php-' | # Filter only those related to php-xxxx
-          grep -Ev "beta|alpha|RC" | # Remove betas, alphas and RCs
           sed 's/\"ref\"://' | # Remove '"ref":'
           sed 's/\"refs\/tags\/php-//' | # Remove '"refs/tags/php-"'
           sed 's/\",//') # Remove last '",'
