@@ -5,11 +5,13 @@ before_install:
 - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew outdated jpeg || brew upgrade jpeg; fi
 - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew outdated openssl || brew upgrade openssl; fi
 - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew outdated readline || brew upgrade readline; fi
-- if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install freetype bison bison27 gettext icu4c libiconv libpng
-  zlib curl; fi
+- if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install freetype bison bison27 gettext icu4c
+  libiconv libpng zlib curl gnu-sed; fi
 - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then export PKG_CONFIG_PATH='/usr/local/opt/openssl/lib/pkgconfig'; fi
-- if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then export PHP_CONFIGURE_OPTIONS='--with-iconv=$(brew --prefix libiconv) --with-openssl=$(brew --prefix openssl)'; fi
-- if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then export PATH="$(brew --prefix bison)/bin:$(brew --prefix icu4c)/bin:$(brew --prefix icu4c)/sbin:$PATH:$(brew --prefix curl)/bin"; fi
+- if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then export PHP_CONFIGURE_OPTIONS='--with-iconv=$(brew --prefix libiconv)
+  --with-openssl=$(brew --prefix openssl)'; fi
+- if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then export PATH="$(brew --prefix bison)/bin:$(brew
+  --prefix icu4c)/bin:$(brew --prefix icu4c)/sbin:$PATH:$(brew --prefix curl)/bin"; fi
 - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get update -qq; fi
 - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get install curl build-essential
   autoconf libjpeg-dev libpng12-dev openssl libssl-dev libcurl4-openssl-dev pkg-config

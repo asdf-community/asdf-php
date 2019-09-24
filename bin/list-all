@@ -5,12 +5,17 @@ if [ -n "$GITHUB_API_TOKEN" ]; then
   auth="-H 'Authorization: token $GITHUB_API_TOKEN'"
 fi
 
+sed="sed"
+if hash gsed 2>/dev/null; then
+  sed="gsed"
+fi
+
 versions=$(curl $auth -s https://api.github.com/repos/php/php-src/git/refs/tags | # Fetch all tags
           grep '"ref":' | # Filter by refs
           grep 'php-' | # Filter only those related to php-xxxx
-          sed 's/\"ref\"://' | # Remove '"ref":'
-          sed 's/\"refs\/tags\/php-//' | # Remove '"refs/tags/php-"'
-          sed 's/\",//') # Remove last '",'
+          $sed 's/\"ref\"://' | # Remove '"ref":'
+          $sed 's/\"refs\/tags\/php-//' | # Remove '"refs/tags/php-"'
+          $sed 's/\",//') # Remove last '",'
 
 # As per the documentation, all versions should be in a single line separated
 # by spaces. We use `xargs` for this.
