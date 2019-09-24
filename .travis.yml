@@ -13,8 +13,8 @@ before_install:
 - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get update -qq; fi
 - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get install curl build-essential
   autoconf libjpeg-dev libpng12-dev openssl libssl-dev libcurl4-openssl-dev pkg-config
-  libsslcommon2-dev libreadline-dev libedit-dev zlib1g-dev libicu-dev libxml2-dev
-  gettext bison libmysqlclient-dev libpq-dev -y; fi
+  libsslcommon2-dev libreadline-dev libedit-dev zlib1g-dev libicu-dev libxml2-dev 
+  gettext bison libmysqlclient-dev libpq-dev libsqlite3-dev libonig-dev -y; fi
 before_script:
 - git clone https://github.com/asdf-vm/asdf.git
 - ". asdf/asdf.sh"
