@@ -3,50 +3,50 @@
 set -o pipefail
 
 install_php() {
-    local install_type=$1
-    local version=$2
-    local install_path=$3
+  local install_type=$1
+  local version=$2
+  local install_path=$3
 
-    if [ "$TMPDIR" = "" ]; then
-        local tmp_download_dir=$(mktemp -d)
-    else
-        local tmp_download_dir=${TMPDIR%/}
-    fi
+  if [ "$TMPDIR" = "" ]; then
+    local tmp_download_dir=$(mktemp -d)
+  else
+    local tmp_download_dir=${TMPDIR%/}
+  fi
 
-    local source_path=$(get_download_file_path $install_type $version $tmp_download_dir)
-    local configure_options="$(construct_configure_options $install_path)"
-    local make_flags="-j$ASDF_CONCURRENCY"
+  local source_path=$(get_download_file_path $install_type $version $tmp_download_dir)
+  local configure_options="$(construct_configure_options $install_path)"
+  local make_flags="-j$ASDF_CONCURRENCY"
 
-    download_source $install_type $version $source_path
+  download_source $install_type $version $source_path
 
-    # Running this in a subshell because we don't to disturb the current
-    # working directory.
-    (
-        cd $(dirname $source_path)
-        tar -zxf $source_path || exit 1
+  # Running this in a subshell because we don't to disturb the current
+  # working directory.
+  (
+    cd $(dirname $source_path)
+    tar -zxf $source_path || exit 1
 
-        cd $(untar_path $install_type $version $tmp_download_dir)
+    cd $(untar_path $install_type $version $tmp_download_dir)
 
-        # Target is OS-specific
-        # target=$(get_target)
+    # Target is OS-specific
+    # target=$(get_target)
 
-        # Build PHP
-        ./buildconf --force || exit 1
-        ./configure $configure_options || exit 1
-        make "$make_flags" || exit 1
-        # make "$make_flags" test || exit 1
-        make "$make_flags" install || exit 1
-    )
+    # Build PHP
+    ./buildconf --force || exit 1
+    ./configure $configure_options || exit 1
+    make "$make_flags" || exit 1
+    # make "$make_flags" test || exit 1
+    make "$make_flags" install || exit 1
+  )
 }
 
 install_composer() {
-    local bin_path=$1/bin
-    local expected_signature="$(wget -q -O - https://composer.github.io/installer.sig)"
+  local bin_path=$1/bin
+  local expected_signature="$(wget -q -O - https://composer.github.io/installer.sig)"
 
-    $bin_path/php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
-    $bin_path/php -r "if (hash_file('sha384', 'composer-setup.php') === '${expected_signature}') { echo 'Installer verified'; } else { echo 'Installer corrupt'; unlink('composer-setup.php'); } echo PHP_EOL;"
-    $bin_path/php composer-setup.php --install-dir=$bin_path --filename=composer
-    $bin_path/php -r "unlink('composer-setup.php');"
+  $bin_path/php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
+  $bin_path/php -r "if (hash_file('sha384', 'composer-setup.php') === '${expected_signature}') { echo 'Installer verified'; } else { echo 'Installer corrupt'; unlink('composer-setup.php'); } echo PHP_EOL;"
+  $bin_path/php composer-setup.php --install-dir=$bin_path --filename=composer
+  $bin_path/php -r "unlink('composer-setup.php');"
 }
 
 construct_configure_options() {
@@ -77,14 +77,12 @@ homebrew_package_path() {
   fi
 }
 
-
 exit_if_homebrew_not_installed() {
   if [ "$(brew --version 2>/dev/null)" = "" ]; then
     echo "ERROR: Please install homebrew for OSX"
     exit 1
   fi
 }
-
 
 os_based_configure_options() {
   local operating_system=$(uname -a)
@@ -211,35 +209,35 @@ os_based_configure_options() {
 }
 
 download_source() {
-    local install_type=$1
-    local version=$2
-    local download_path=$3
-    local download_url=$(get_download_url $install_type $version)
+  local install_type=$1
+  local version=$2
+  local download_path=$3
+  local download_url=$(get_download_url $install_type $version)
 
-    # curl -Lo $download_path -C - $download_url
-    curl -Lo $download_path $download_url
+  # curl -Lo $download_path -C - $download_url
+  curl -Lo $download_path $download_url
 }
 
 get_download_file_path() {
-    local install_type=$1
-    local version=$2
-    local tmp_download_dir=$3
-    local php_version=$(get_php_version $version)
-    local pkg_name="php-${php_version}.tar.gz"
+  local install_type=$1
+  local version=$2
+  local tmp_download_dir=$3
+  local php_version=$(get_php_version $version)
+  local pkg_name="php-${php_version}.tar.gz"
 
-    echo "$tmp_download_dir/$pkg_name"
+  echo "$tmp_download_dir/$pkg_name"
 }
 
 untar_path() {
-    local install_type=$1
-    local version=$2
-    local tmp_download_dir=$3
+  local install_type=$1
+  local version=$2
+  local tmp_download_dir=$3
 
-    local php_version=$(get_php_version $version)
+  local php_version=$(get_php_version $version)
 
-    local dir_name="php-src-php-${php_version}"
+  local dir_name="php-src-php-${php_version}"
 
-    echo "$tmp_download_dir/$dir_name"
+  echo "$tmp_download_dir/$dir_name"
 }
 
 get_download_url() {
@@ -250,13 +248,13 @@ get_download_url() {
 }
 
 get_php_version() {
-    IFS='-' read -a version_info <<< "$1"
+  IFS='-' read -a version_info <<<"$1"
 
-    if [ "${#version_info[@]}" -eq 1 ]; then
-        echo "${version_info[0]}"
-    else
-        echo "${version_info[0]}-${version_info[1]}"
-    fi
+  if [ "${#version_info[@]}" -eq 1 ]; then
+    echo "${version_info[0]}"
+  else
+    echo "${version_info[0]}-${version_info[1]}"
+  fi
 }
 
 install_php $ASDF_INSTALL_TYPE $ASDF_INSTALL_VERSION $ASDF_INSTALL_PATH
