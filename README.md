@@ -19,7 +19,7 @@ PHP_WITHOUT_PEAR=yes asdf install php 7.2.14
 ## Install
 
 ```
-asdf plugin-add php https://github.com/odarriba/asdf-php.git
+asdf plugin-add php https://github.com/asdf-community/asdf-php.git
 ```
 
 **Please, remember installing the commonly required libraries that can be found on the `asdf` README. They are necessary to build PHP versions too!**
@@ -81,7 +81,7 @@ Check the [asdf](https://github.com/HashNuke/asdf) readme for instructions on ho
 
 Feel free to create an issue or pull request if you find a bug.
 
-Note that the Travis builds for your PR _will_ fail: https://github.com/odarriba/asdf-php/pull/4#issuecomment-319123603
+Note that the Travis builds for your PR _will_ fail: https://github.com/asdf-community/asdf-php/pull/4#issuecomment-319123603
 
 ## Issues
 
