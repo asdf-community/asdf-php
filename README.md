@@ -11,16 +11,6 @@
 _Original version of this plugin created by
 [@Stratus3D](https://github.com/Stratus3D)_
 
-## Note: PHP-PEAR
-
-PHP Pear is down without ETA for when the server will be back. To install PHP
-without Pear you can specify a `PHP_WITHOUT_PEAR` variable with any value
-(except no), eg:
-
-```
-PHP_WITHOUT_PEAR=yes asdf install php <version>
-```
-
 ## Installation
 
 ```bash
@@ -35,13 +25,13 @@ on the `asdf` README. They are necessary to build PHP versions too!**
 You may need this libraries and packages to be able to compile PHP compiler
 versions:
 
-```
+```bash
 sudo apt-get install curl build-essential autoconf libjpeg-dev libpng12-dev openssl libssl-dev libcurl4-openssl-dev pkg-config libsslcommon2-dev libreadline-dev libedit-dev zlib1g-dev libicu-dev libxml2-dev gettext bison libmysqlclient-dev libpq-dev libsqlite3-dev libonig-dev
 ```
 
 #### Ubuntu 18.04
 
-```
+```bash
 sudo apt install curl build-essential libjpeg-dev libpng-dev openssl libcurl4-openssl-dev pkg-config libedit-dev zlib1g-dev libicu-dev libxml2-dev gettext bison libmysqlclient-dev libpq-dev libsqlite3-dev libonig-dev
 ```
 
@@ -49,7 +39,7 @@ sudo apt install curl build-essential libjpeg-dev libpng-dev openssl libcurl4-op
 
 To compile PHP on macOS machines, you must install some brew packages first:
 
-```
+```bash
 brew install freetype bison bison27 gettext icu4c jpeg libiconv libpng openssl readline zlib
 ```
 
@@ -61,7 +51,7 @@ you installed using homebrew. Note that:
 
 So replace if necessary:
 
-```
+```bash
 PATH="$(brew --prefix bison)/bin:$(brew --prefix icu4c)/bin:$(brew --prefix icu4c)/sbin:$PATH" PHP_CONFIGURE_OPTIONS="--with-iconv=$(brew --prefix libiconv) --with-openssl=$(brew --prefix openssl)" asdf install php <version>
 ```
 
@@ -73,17 +63,18 @@ module manually.
 
 To disable it, just execute this **before** run the `asdf install` command:
 
-```
-$ export PHP_CONFIGURE_OPTIONS='--disable-gettext'
+```bash
+export PHP_CONFIGURE_OPTIONS='--disable-gettext'
 ```
 
-## Development
+### Note: PHP-PEAR
 
-To modify this plugin into your `asdf` installation and see changes live, just
-create a symlink:
+PHP Pear is down without ETA for when the server will be back. To install PHP
+without Pear you can specify a `PHP_WITHOUT_PEAR` variable with any value
+(except no), eg:
 
-```
-ln -s . ~/.asdf/plugins/php
+```bash
+PHP_WITHOUT_PEAR=yes asdf install php <version>
 ```
 
 ## Usage
