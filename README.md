@@ -5,7 +5,7 @@
 <hr />
 
 [![GitHub Workflow Status](https://img.shields.io/github/workflow/status/asdf-community/asdf-php/Main%20workflow?style=flat-square)](https://github.com/asdf-community/asdf-php/actions)
-[![All Contributors](https://img.shields.io/badge/all_contributors-11-orange.svg?style=flat-square)](#contributors-)
+[![All Contributors](https://img.shields.io/badge/all_contributors-12-orange.svg?style=flat-square)](#contributors-)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](http://makeapullrequest.com)
 [![License](https://img.shields.io/github/license/asdf-community/asdf-php?style=flat-square&color=brightgreen)](https://github.com/asdf-community/asdf-php/blob/master/LICENSE)
 
@@ -65,6 +65,7 @@ Thanks goes to these wonderful people
     <td align="center"><a href="https://medium.com/@belaustegui"><img src="https://avatars3.githubusercontent.com/u/2965623?v=4" width="100px;" alt=""/><br /><sub><b>Cristian Álvarez Belaustegui</b></sub></a><br /><a href="https://github.com/asdf-community/asdf-php/commits?author=crbelaus" title="Code">💻</a></td>
     <td align="center"><a href="https://www.mokhan.ca"><img src="https://avatars1.githubusercontent.com/u/80475?v=4" width="100px;" alt=""/><br /><sub><b>mo khan</b></sub></a><br /><a href="https://github.com/asdf-community/asdf-php/commits?author=mokhan" title="Code">💻</a></td>
     <td align="center"><a href="http://christopherjones.us"><img src="https://avatars0.githubusercontent.com/u/115515?v=4" width="100px;" alt=""/><br /><sub><b>Chris Jones</b></sub></a><br /><a href="https://github.com/asdf-community/asdf-php/commits?author=magikid" title="Documentation">📖</a></td>
+    <td align="center"><a href="https://me.baldarn.com/"><img src="https://avatars0.githubusercontent.com/u/2814802?v=4" width="100px;" alt=""/><br /><sub><b>lorenzo farnararo</b></sub></a><br /><a href="https://github.com/asdf-community/asdf-php/commits?author=baldarn" title="Code">💻</a></td>
   </tr>
 </table>
 

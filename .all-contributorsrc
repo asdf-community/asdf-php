@@ -114,6 +114,15 @@
       "contributions": [
         "doc"
       ]
+    },
+    {
+      "login": "baldarn",
+      "name": "lorenzo farnararo",
+      "avatar_url": "https://avatars0.githubusercontent.com/u/2814802?v=4",
+      "profile": "https://me.baldarn.com/",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 7,
