@@ -1,6 +1,12 @@
-# asdf-php
+<div align="center">
+<h1>asdf-php</h1>
+<span><a href="https://www.php.net">PHP</a> plugin for asdf version manager</span>
+</div>
+<hr />
 
-PHP plugin for [asdf version manager](https://github.com/HashNuke/asdf).
+[![GitHub Workflow Status](https://img.shields.io/github/workflow/status/asdf-community/asdf-php/Main%20workflow?style=flat-square)](https://github.com/asdf-community/asdf-php/actions)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](http://makeapullrequest.com)
+[![License](https://img.shields.io/github/license/asdf-community/asdf-php?style=flat-square&color=brightgreen)](https://github.com/asdf-community/asdf-php/blob/master/LICENSE)
 
 _Original version of this plugin created by [@Stratus3D](https://github.com/Stratus3D)_
 
