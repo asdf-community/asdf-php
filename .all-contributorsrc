@@ -1,0 +1,24 @@
+{
+  "files": [
+    "README.md"
+  ],
+  "imageSize": 100,
+  "commit": false,
+  "contributors": [
+    {
+      "login": "Stratus3D",
+      "name": "Trevor Brown",
+      "avatar_url": "https://avatars1.githubusercontent.com/u/1520926?v=4",
+      "profile": "https://stratus3d.com/",
+      "contributions": [
+        "code"
+      ]
+    }
+  ],
+  "contributorsPerLine": 7,
+  "projectName": "asdf-php",
+  "projectOwner": "asdf-community",
+  "repoType": "github",
+  "repoHost": "https://github.com",
+  "skipCi": true
+}
