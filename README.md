@@ -5,7 +5,7 @@
 <hr />
 
 [![GitHub Workflow Status](https://img.shields.io/github/workflow/status/asdf-community/asdf-php/Main%20workflow?style=flat-square)](https://github.com/asdf-community/asdf-php/actions)<!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-[![All Contributors](https://img.shields.io/badge/all_contributors-1-orange.svg?style=flat-square)](#contributors-)<!-- ALL-CONTRIBUTORS-BADGE:END -->
+[![All Contributors](https://img.shields.io/badge/all_contributors-2-orange.svg?style=flat-square)](#contributors-)<!-- ALL-CONTRIBUTORS-BADGE:END -->
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](http://makeapullrequest.com)
 [![License](https://img.shields.io/github/license/asdf-community/asdf-php?style=flat-square&color=brightgreen)](https://github.com/asdf-community/asdf-php/blob/master/LICENSE)
 
@@ -53,6 +53,7 @@ Thanks goes to these wonderful people
 <table>
   <tr>
     <td align="center"><a href="https://stratus3d.com/"><img src="https://avatars1.githubusercontent.com/u/1520926?v=4" width="100px;" alt=""/><br /><sub><b>Trevor Brown</b></sub></a><br /><a href="https://github.com/asdf-community/asdf-php/commits?author=Stratus3D" title="Code">💻</a></td>
+    <td align="center"><a href="https://oscardearriba.com"><img src="https://avatars3.githubusercontent.com/u/563391?v=4" width="100px;" alt=""/><br /><sub><b>Óscar de Arriba</b></sub></a><br /><a href="https://github.com/asdf-community/asdf-php/commits?author=odarriba" title="Documentation">📖</a> <a href="#maintenance-odarriba" title="Maintenance">🚧</a> <a href="#infra-odarriba" title="Infrastructure (Hosting, Build-Tools, etc)">🚇</a></td>
   </tr>
 </table>
 
