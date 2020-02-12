@@ -13,6 +13,17 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "odarriba",
+      "name": "Óscar de Arriba",
+      "avatar_url": "https://avatars3.githubusercontent.com/u/563391?v=4",
+      "profile": "https://oscardearriba.com",
+      "contributions": [
+        "doc",
+        "maintenance",
+        "infra"
+      ]
     }
   ],
   "contributorsPerLine": 7,
