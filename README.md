@@ -5,7 +5,7 @@
 <hr />
 
 [![GitHub Workflow Status](https://img.shields.io/github/workflow/status/asdf-community/asdf-php/Main%20workflow?style=flat-square)](https://github.com/asdf-community/asdf-php/actions)
-[![All Contributors](https://img.shields.io/badge/all_contributors-8-orange.svg?style=flat-square)](#contributors-)
+[![All Contributors](https://img.shields.io/badge/all_contributors-9-orange.svg?style=flat-square)](#contributors-)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](http://makeapullrequest.com)
 [![License](https://img.shields.io/github/license/asdf-community/asdf-php?style=flat-square&color=brightgreen)](https://github.com/asdf-community/asdf-php/blob/master/LICENSE)
 
@@ -62,6 +62,7 @@ Thanks goes to these wonderful people
   </tr>
   <tr>
     <td align="center"><a href="http://caleb.fm"><img src="https://avatars1.githubusercontent.com/u/4692?v=4" width="100px;" alt=""/><br /><sub><b>Caleb Land</b></sub></a><br /><a href="https://github.com/asdf-community/asdf-php/commits?author=caleb" title="Code">💻</a> <a href="https://github.com/asdf-community/asdf-php/commits?author=caleb" title="Documentation">📖</a></td>
+    <td align="center"><a href="https://medium.com/@belaustegui"><img src="https://avatars3.githubusercontent.com/u/2965623?v=4" width="100px;" alt=""/><br /><sub><b>Cristian Álvarez Belaustegui</b></sub></a><br /><a href="https://github.com/asdf-community/asdf-php/commits?author=crbelaus" title="Code">💻</a></td>
   </tr>
 </table>
 
