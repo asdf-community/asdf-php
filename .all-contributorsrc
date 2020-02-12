@@ -57,6 +57,16 @@
         "doc",
         "infra"
       ]
+    },
+    {
+      "login": "salzig",
+      "name": "Ben Rexin",
+      "avatar_url": "https://avatars0.githubusercontent.com/u/99911?v=4",
+      "profile": "http://salzsee.info",
+      "contributions": [
+        "code",
+        "doc"
+      ]
     }
   ],
   "contributorsPerLine": 7,
