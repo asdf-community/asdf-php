@@ -67,6 +67,16 @@
         "code",
         "doc"
       ]
+    },
+    {
+      "login": "matjack1",
+      "name": "Matteo Giaccone",
+      "avatar_url": "https://avatars3.githubusercontent.com/u/65402?v=4",
+      "profile": "https://turnintocoders.it",
+      "contributions": [
+        "doc",
+        "infra"
+      ]
     }
   ],
   "contributorsPerLine": 7,
