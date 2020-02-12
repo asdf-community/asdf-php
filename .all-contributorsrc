@@ -77,6 +77,16 @@
         "doc",
         "infra"
       ]
+    },
+    {
+      "login": "caleb",
+      "name": "Caleb Land",
+      "avatar_url": "https://avatars1.githubusercontent.com/u/4692?v=4",
+      "profile": "http://caleb.fm",
+      "contributions": [
+        "code",
+        "doc"
+      ]
     }
   ],
   "contributorsPerLine": 7,
