@@ -5,7 +5,7 @@
 <hr />
 
 [![GitHub Workflow Status](https://img.shields.io/github/workflow/status/asdf-community/asdf-php/Main%20workflow?style=flat-square)](https://github.com/asdf-community/asdf-php/actions)
-[![All Contributors](https://img.shields.io/badge/all_contributors-4-orange.svg?style=flat-square)](#contributors-)
+[![All Contributors](https://img.shields.io/badge/all_contributors-5-orange.svg?style=flat-square)](#contributors-)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](http://makeapullrequest.com)
 [![License](https://img.shields.io/github/license/asdf-community/asdf-php?style=flat-square&color=brightgreen)](https://github.com/asdf-community/asdf-php/blob/master/LICENSE)
 
@@ -56,6 +56,7 @@ Thanks goes to these wonderful people
     <td align="center"><a href="https://oscardearriba.com"><img src="https://avatars3.githubusercontent.com/u/563391?v=4" width="100px;" alt=""/><br /><sub><b>Óscar de Arriba</b></sub></a><br /><a href="https://github.com/asdf-community/asdf-php/commits?author=odarriba" title="Documentation">📖</a> <a href="#maintenance-odarriba" title="Maintenance">🚧</a> <a href="#infra-odarriba" title="Infrastructure (Hosting, Build-Tools, etc)">🚇</a></td>
     <td align="center"><a href="https://bsky.moe"><img src="https://avatars3.githubusercontent.com/u/38746192?v=4" width="100px;" alt=""/><br /><sub><b>BSKY</b></sub></a><br /><a href="https://github.com/asdf-community/asdf-php/commits?author=imbsky" title="Code">💻</a> <a href="https://github.com/asdf-community/asdf-php/commits?author=imbsky" title="Documentation">📖</a> <a href="#maintenance-imbsky" title="Maintenance">🚧</a> <a href="#infra-imbsky" title="Infrastructure (Hosting, Build-Tools, etc)">🚇</a></td>
     <td align="center"><a href="https://www.bixels.nl"><img src="https://avatars1.githubusercontent.com/u/334814?v=4" width="100px;" alt=""/><br /><sub><b>Choong Wei Tjeng</b></sub></a><br /><a href="https://github.com/asdf-community/asdf-php/commits?author=bixelsnl" title="Documentation">📖</a> <a href="#infra-bixelsnl" title="Infrastructure (Hosting, Build-Tools, etc)">🚇</a></td>
+    <td align="center"><a href="http://eher.com.br"><img src="https://avatars0.githubusercontent.com/u/398034?v=4" width="100px;" alt=""/><br /><sub><b>Alexandre Eher</b></sub></a><br /><a href="https://github.com/asdf-community/asdf-php/commits?author=EHER" title="Code">💻</a> <a href="https://github.com/asdf-community/asdf-php/commits?author=EHER" title="Documentation">📖</a> <a href="#infra-EHER" title="Infrastructure (Hosting, Build-Tools, etc)">🚇</a></td>
   </tr>
 </table>
 
