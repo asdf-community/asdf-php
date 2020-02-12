@@ -67,6 +67,7 @@ Thanks goes to these wonderful people
     <td align="center"><a href="http://christopherjones.us"><img src="https://avatars0.githubusercontent.com/u/115515?v=4" width="100px;" alt=""/><br /><sub><b>Chris Jones</b></sub></a><br /><a href="https://github.com/asdf-community/asdf-php/commits?author=magikid" title="Documentation">📖</a></td>
     <td align="center"><a href="https://me.baldarn.com/"><img src="https://avatars0.githubusercontent.com/u/2814802?v=4" width="100px;" alt=""/><br /><sub><b>lorenzo farnararo</b></sub></a><br /><a href="https://github.com/asdf-community/asdf-php/commits?author=baldarn" title="Code">💻</a></td>
     <td align="center"><a href="https://github.com/j-dexx"><img src="https://avatars3.githubusercontent.com/u/6691543?v=4" width="100px;" alt=""/><br /><sub><b>James</b></sub></a><br /><a href="https://github.com/asdf-community/asdf-php/commits?author=j-dexx" title="Code">💻</a></td>
+    <td align="center"><a href="https://trevorsuarez.com/"><img src="https://avatars3.githubusercontent.com/u/742384?v=4" width="100px;" alt=""/><br /><sub><b>Trevor N. Suarez</b></sub></a><br /><a href="https://github.com/asdf-community/asdf-php/commits?author=Rican7" title="Code">💻</a></td>
   </tr>
 </table>
 
