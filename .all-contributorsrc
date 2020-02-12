@@ -36,6 +36,16 @@
         "maintenance",
         "infra"
       ]
+    },
+    {
+      "login": "bixelsnl",
+      "name": "Choong Wei Tjeng",
+      "avatar_url": "https://avatars1.githubusercontent.com/u/334814?v=4",
+      "profile": "https://www.bixels.nl",
+      "contributions": [
+        "doc",
+        "infra"
+      ]
     }
   ],
   "contributorsPerLine": 7,
