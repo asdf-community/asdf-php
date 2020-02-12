@@ -18,7 +18,7 @@ dependencies, paths, and environment variables needed to install the latest PHP
 version. To be honest, supporting a major version other than the latest without
 any extra work from the user is an endless endeavor that won't ever really work
 too well. It's not that we don't support them at all, but it's almost impossible
-for us to actively support them.
+for us to support them.
 
 ## Installation
 
