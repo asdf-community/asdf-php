@@ -18,7 +18,7 @@ without Pear you can specify a `PHP_WITHOUT_PEAR` variable with any value
 (except no), eg:
 
 ```
-PHP_WITHOUT_PEAR=yes asdf install php 7.2.14
+PHP_WITHOUT_PEAR=yes asdf install php <version>
 ```
 
 ## Installation
