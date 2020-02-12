@@ -60,6 +60,9 @@ Thanks goes to these wonderful people
     <td align="center"><a href="http://salzsee.info"><img src="https://avatars0.githubusercontent.com/u/99911?v=4" width="100px;" alt=""/><br /><sub><b>Ben Rexin</b></sub></a><br /><a href="https://github.com/asdf-community/asdf-php/commits?author=salzig" title="Code">💻</a> <a href="https://github.com/asdf-community/asdf-php/commits?author=salzig" title="Documentation">📖</a></td>
     <td align="center"><a href="https://turnintocoders.it"><img src="https://avatars3.githubusercontent.com/u/65402?v=4" width="100px;" alt=""/><br /><sub><b>Matteo Giaccone</b></sub></a><br /><a href="https://github.com/asdf-community/asdf-php/commits?author=matjack1" title="Documentation">📖</a> <a href="#infra-matjack1" title="Infrastructure (Hosting, Build-Tools, etc)">🚇</a></td>
   </tr>
+  <tr>
+    <td align="center"><a href="http://caleb.fm"><img src="https://avatars1.githubusercontent.com/u/4692?v=4" width="100px;" alt=""/><br /><sub><b>Caleb Land</b></sub></a><br /><a href="https://github.com/asdf-community/asdf-php/commits?author=caleb" title="Code">💻</a> <a href="https://github.com/asdf-community/asdf-php/commits?author=caleb" title="Documentation">📖</a></td>
+  </tr>
 </table>
 
 <!-- markdownlint-enable -->
