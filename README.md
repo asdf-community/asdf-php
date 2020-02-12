@@ -26,7 +26,7 @@ for us to actively support them.
 asdf plugin-add php https://github.com/asdf-community/asdf-php.git
 ```
 
-### Note: PHP-PEAR
+#### Note: PHP-PEAR
 
 PHP PEAR is down without ETA for when the server will be back. To install PHP
 without PEAR you can specify a `PHP_WITHOUT_PEAR` variable with any value
