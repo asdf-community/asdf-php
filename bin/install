@@ -16,7 +16,7 @@
 # specific language governing permissions and limitations
 # under the License.
 
-set -o pipefail
+set -eo pipefail
 
 install_php() {
   local install_type=$1
