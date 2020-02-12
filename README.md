@@ -69,8 +69,8 @@ export PHP_CONFIGURE_OPTIONS='--disable-gettext'
 
 ### Note: PHP-PEAR
 
-PHP Pear is down without ETA for when the server will be back. To install PHP
-without Pear you can specify a `PHP_WITHOUT_PEAR` variable with any value
+PHP PEAR is down without ETA for when the server will be back. To install PHP
+without PEAR you can specify a `PHP_WITHOUT_PEAR` variable with any value
 (except no), eg:
 
 ```bash
