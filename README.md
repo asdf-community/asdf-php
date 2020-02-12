@@ -62,6 +62,7 @@ Thanks goes to these wonderful people
   </tr>
   <tr>
     <td align="center"><a href="http://caleb.fm"><img src="https://avatars1.githubusercontent.com/u/4692?v=4" width="100px;" alt=""/><br /><sub><b>Caleb Land</b></sub></a><br /><a href="https://github.com/asdf-community/asdf-php/commits?author=caleb" title="Code">💻</a> <a href="https://github.com/asdf-community/asdf-php/commits?author=caleb" title="Documentation">📖</a></td>
+    <td align="center"><a href="https://medium.com/@belaustegui"><img src="https://avatars3.githubusercontent.com/u/2965623?v=4" width="100px;" alt=""/><br /><sub><b>Cristian Álvarez Belaustegui</b></sub></a><br /><a href="https://github.com/asdf-community/asdf-php/commits?author=crbelaus" title="Code">💻</a></td>
   </tr>
 </table>
 
