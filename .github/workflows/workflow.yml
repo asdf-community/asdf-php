@@ -1,0 +1,43 @@
+name: Main workflow
+
+on:
+  push:
+    paths-ignore:
+      - "**.md"
+  pull_request:
+    paths-ignore:
+      - "**.md"
+  schedule:
+    - cron: "0 0 * * 5"
+
+jobs:
+  plugin_test:
+    strategy:
+      matrix:
+        os: [macos-latest, ubuntu-latest]
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Install packages for Ubuntu
+        if: matrix.os == 'ubuntu-latest'
+        run: sudo apt install bison build-essential curl gettext libcurl4-openssl-dev libedit-dev libicu-dev libjpeg-dev libmysqlclient-dev libonig-dev libpng-dev libpq-dev libreadline-dev libsqlite3-dev libxml2-dev openssl pkg-config re2c zlib1g-dev
+
+      - name: Install packages for macOS
+        if: matrix.os == 'macos-latest'
+        run: brew install autoconf automake bison freetype gettext icu4c krb5 libedit libiconv libjpeg libpng libxml2 pkg-config re2c zlib
+
+      - name: Add PKG_CONFIG_PATH environment variable for macOS
+        if: matrix.os == 'macos-latest'
+        run: echo "::set-env name=PKG_CONFIG_PATH::$(brew --prefix icu4c)/lib/pkgconfig:$(brew --prefix krb5)/lib/pkgconfig:$(brew --prefix libedit)/lib/pkgconfig:$(brew --prefix libxml2)/lib/pkgconfig:$(brew --prefix openssl)/lib/pkgconfig"
+
+      - name: Add bison path for macOS
+        if: matrix.os == 'macos-latest'
+        run: echo "::add-path::$(brew --prefix bison)/bin"
+
+      - name: asdf_plugin_test
+        uses: asdf-vm/actions/plugin-test@v1.0.0
+        with:
+          command: php --version
+        env:
+          GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
