@@ -24,6 +24,18 @@
         "maintenance",
         "infra"
       ]
+    },
+    {
+      "login": "imbsky",
+      "name": "BSKY",
+      "avatar_url": "https://avatars3.githubusercontent.com/u/38746192?v=4",
+      "profile": "https://bsky.moe",
+      "contributions": [
+        "code",
+        "doc",
+        "maintenance",
+        "infra"
+      ]
     }
   ],
   "contributorsPerLine": 7,
