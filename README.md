@@ -55,12 +55,12 @@ Thanks goes to these wonderful people
     <td align="center"><a href="https://stratus3d.com/"><img src="https://avatars1.githubusercontent.com/u/1520926?v=4" width="100px;" alt=""/><br /><sub><b>Trevor Brown</b></sub></a><br /><a href="https://github.com/asdf-community/asdf-php/commits?author=Stratus3D" title="Code">💻</a></td>
     <td align="center"><a href="https://oscardearriba.com"><img src="https://avatars3.githubusercontent.com/u/563391?v=4" width="100px;" alt=""/><br /><sub><b>Óscar de Arriba</b></sub></a><br /><a href="https://github.com/asdf-community/asdf-php/commits?author=odarriba" title="Documentation">📖</a> <a href="#maintenance-odarriba" title="Maintenance">🚧</a> <a href="#infra-odarriba" title="Infrastructure (Hosting, Build-Tools, etc)">🚇</a></td>
     <td align="center"><a href="https://bsky.moe"><img src="https://avatars3.githubusercontent.com/u/38746192?v=4" width="100px;" alt=""/><br /><sub><b>BSKY</b></sub></a><br /><a href="https://github.com/asdf-community/asdf-php/commits?author=imbsky" title="Code">💻</a> <a href="https://github.com/asdf-community/asdf-php/commits?author=imbsky" title="Documentation">📖</a> <a href="#maintenance-imbsky" title="Maintenance">🚧</a> <a href="#infra-imbsky" title="Infrastructure (Hosting, Build-Tools, etc)">🚇</a></td>
+    <td align="center"><a href="https://www.bixels.nl"><img src="https://avatars1.githubusercontent.com/u/334814?v=4" width="100px;" alt=""/><br /><sub><b>Choong Wei Tjeng</b></sub></a><br /><a href="https://github.com/asdf-community/asdf-php/commits?author=bixelsnl" title="Documentation">📖</a> <a href="#infra-bixelsnl" title="Infrastructure (Hosting, Build-Tools, etc)">🚇</a></td>
   </tr>
 </table>
 
 <!-- markdownlint-enable -->
 <!-- prettier-ignore-end -->
-
 <!-- ALL-CONTRIBUTORS-LIST:END -->
 
 This project follows the
