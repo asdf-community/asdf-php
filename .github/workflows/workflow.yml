@@ -21,11 +21,11 @@ jobs:
     steps:
       - name: Install packages for Ubuntu
         if: matrix.os == 'ubuntu-latest'
-        run: sudo apt install bison build-essential curl gettext libcurl4-openssl-dev libedit-dev libicu-dev libjpeg-dev libmysqlclient-dev libonig-dev libpng-dev libpq-dev libreadline-dev libsqlite3-dev libxml2-dev openssl pkg-config re2c zlib1g-dev
+        run: sudo apt install bison build-essential curl gettext libcurl4-openssl-dev libedit-dev libicu-dev libjpeg-dev libmysqlclient-dev libonig-dev libpng-dev libpq-dev libreadline-dev libsqlite3-dev libxml2-dev libzip-dev openssl pkg-config re2c zlib1g-dev
 
       - name: Install packages for macOS
         if: matrix.os == 'macos-latest'
-        run: brew install autoconf automake bison freetype gettext icu4c krb5 libedit libiconv libjpeg libpng libxml2 pkg-config re2c zlib
+        run: brew install autoconf automake bison freetype gettext icu4c krb5 libedit libiconv libjpeg libpng libxml2 libzip pkg-config re2c zlib
 
       - name: Add PKG_CONFIG_PATH environment variable for macOS
         if: matrix.os == 'macos-latest'
