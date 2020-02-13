@@ -27,7 +27,7 @@ versions=$(
   git ls-remote --tags https://github.com/php/php-src.git |
     grep 'php-' |
     awk '!/({})/ {print $2}' |
-    awk 'gsub("(refs/tags/)|(php-)", "")' |
+    tr -d 'refs/tags/php-' |
     sort_versions |
     xargs
 )
