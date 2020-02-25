@@ -69,6 +69,9 @@ Thanks goes to these wonderful people
     <td align="center"><a href="https://github.com/j-dexx"><img src="https://avatars3.githubusercontent.com/u/6691543?v=4" width="100px;" alt=""/><br /><sub><b>James</b></sub></a><br /><a href="https://github.com/asdf-community/asdf-php/commits?author=j-dexx" title="Code">💻</a></td>
     <td align="center"><a href="https://trevorsuarez.com/"><img src="https://avatars3.githubusercontent.com/u/742384?v=4" width="100px;" alt=""/><br /><sub><b>Trevor N. Suarez</b></sub></a><br /><a href="https://github.com/asdf-community/asdf-php/commits?author=Rican7" title="Code">💻</a></td>
   </tr>
+  <tr>
+    <td align="center"><a href="https://github.com/triptec"><img src="https://avatars0.githubusercontent.com/u/240159?v=4" width="100px;" alt=""/><br /><sub><b>Andreas Franzén</b></sub></a><br /><a href="https://github.com/asdf-community/asdf-php/commits?author=triptec" title="Code">💻</a> <a href="#infra-triptec" title="Infrastructure (Hosting, Build-Tools, etc)">🚇</a></td>
+  </tr>
 </table>
 
 <!-- markdownlint-enable -->
