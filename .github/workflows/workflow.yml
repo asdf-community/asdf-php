@@ -41,3 +41,16 @@ jobs:
         uses: asdf-vm/actions/plugin-test@v1.0.0
         with:
           command: php --version
+
+  format:
+    runs-on: macOS-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Install shfmt
+        run: brew install shfmt
+
+      - name: Run shfmt
+        run: shfmt -d -i 2 -ci .
