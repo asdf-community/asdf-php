@@ -16,5 +16,7 @@
 # specific language governing permissions and limitations
 # under the License.
 
-# Register PHP's binaries, and Composer's home vendor binaries.
-echo "bin sbin .composer/vendor/bin"
+# Set Composer's home directory if it's not set.
+if [ -z "$COMPOSER_HOME" ]; then
+  export COMPOSER_HOME=$ASDF_INSTALL_PATH/.composer
+fi
