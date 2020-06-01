@@ -71,6 +71,7 @@ Thanks goes to these wonderful people
   </tr>
   <tr>
     <td align="center"><a href="https://github.com/triptec"><img src="https://avatars0.githubusercontent.com/u/240159?v=4" width="100px;" alt=""/><br /><sub><b>Andreas Franzén</b></sub></a><br /><a href="https://github.com/asdf-community/asdf-php/commits?author=triptec" title="Code">💻</a> <a href="#infra-triptec" title="Infrastructure (Hosting, Build-Tools, etc)">🚇</a></td>
+    <td align="center"><a href="https://robloach.net"><img src="https://avatars1.githubusercontent.com/u/25086?v=4" width="100px;" alt=""/><br /><sub><b>Rob Loach</b></sub></a><br /><a href="https://github.com/asdf-community/asdf-php/commits?author=RobLoach" title="Code">💻</a></td>
   </tr>
 </table>
 
