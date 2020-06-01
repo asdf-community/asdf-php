@@ -5,7 +5,7 @@
 <hr />
 
 [![GitHub Workflow Status](https://img.shields.io/github/workflow/status/asdf-community/asdf-php/Main%20workflow?style=flat-square)](https://github.com/asdf-community/asdf-php/actions)
-[![All Contributors](https://img.shields.io/badge/all_contributors-15-orange.svg?style=flat-square)](#contributors-)
+[![All Contributors](https://img.shields.io/badge/all_contributors-16-orange.svg?style=flat-square)](#contributors-)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](http://makeapullrequest.com)
 [![License](https://img.shields.io/github/license/asdf-community/asdf-php?style=flat-square&color=brightgreen)](https://github.com/asdf-community/asdf-php/blob/master/LICENSE)
 
@@ -71,6 +71,7 @@ Thanks goes to these wonderful people
   </tr>
   <tr>
     <td align="center"><a href="https://github.com/triptec"><img src="https://avatars0.githubusercontent.com/u/240159?v=4" width="100px;" alt=""/><br /><sub><b>Andreas Franzén</b></sub></a><br /><a href="https://github.com/asdf-community/asdf-php/commits?author=triptec" title="Code">💻</a> <a href="#infra-triptec" title="Infrastructure (Hosting, Build-Tools, etc)">🚇</a></td>
+    <td align="center"><a href="https://robloach.net"><img src="https://avatars1.githubusercontent.com/u/25086?v=4" width="100px;" alt=""/><br /><sub><b>Rob Loach</b></sub></a><br /><a href="https://github.com/asdf-community/asdf-php/commits?author=RobLoach" title="Code">💻</a></td>
   </tr>
 </table>
 
