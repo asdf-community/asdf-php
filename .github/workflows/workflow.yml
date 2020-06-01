@@ -3,31 +3,39 @@ name: Main workflow
 on:
   push:
     paths-ignore:
+      - .all-contributorsrc
       - "**.md"
-      - ".all-contributorsrc"
   pull_request:
     paths-ignore:
+      - .all-contributorsrc
       - "**.md"
-      - ".all-contributorsrc"
   schedule:
-    - cron: "0 0 * * 5"
+    - cron: 0 0 * * 5
 
 jobs:
   plugin_test:
     strategy:
       matrix:
-        os: [macos-latest, ubuntu-latest]
+        os:
+          - macos-latest
+          - ubuntu-latest
+
+    env:
+      CC: ccache gcc
+      CCACHE_DIR: ${{ github.workspace }}/.ccache
+      CXX: ccache g++
+      USE_CCACHE: 1
 
     runs-on: ${{ matrix.os }}
 
     steps:
       - name: Install packages for Ubuntu
         if: matrix.os == 'ubuntu-latest'
-        run: sudo apt-get update && sudo apt-get install autoconf bison build-essential curl gettext libcurl4-openssl-dev libedit-dev libicu-dev libjpeg-dev libmysqlclient-dev libonig-dev libpng-dev libpq-dev libreadline-dev libsqlite3-dev libssl-dev libxml2-dev libzip-dev openssl pkg-config re2c zlib1g-dev
+        run: sudo apt-get update && sudo apt-get install autoconf bison build-essential ccache curl gettext libcurl4-openssl-dev libedit-dev libicu-dev libjpeg-dev libmysqlclient-dev libonig-dev libpng-dev libpq-dev libreadline-dev libsqlite3-dev libssl-dev libxml2-dev libzip-dev openssl pkg-config re2c zlib1g-dev
 
       - name: Install packages for macOS
         if: matrix.os == 'macos-latest'
-        run: brew install autoconf automake bison freetype gettext icu4c krb5 libedit libiconv libjpeg libpng libxml2 libzip pkg-config re2c zlib
+        run: brew install autoconf automake bison ccache freetype gettext icu4c krb5 libedit libiconv libjpeg libpng libxml2 libzip pkg-config re2c zlib
 
       - name: Add PKG_CONFIG_PATH environment variable for macOS
         if: matrix.os == 'macos-latest'
@@ -37,10 +45,21 @@ jobs:
         if: matrix.os == 'macos-latest'
         run: echo "::add-path::$(brew --prefix bison)/bin"
 
+      - name: Retrieve cache
+        uses: actions/cache@v2
+        with:
+          path: ${{ env.CCACHE_DIR }}
+          key: ${{ runner.os }}-ccache-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-ccache-
+
       - name: asdf_plugin_test
         uses: asdf-vm/actions/plugin-test@v1.0.0
         with:
           command: php --version
+
+      - name: Show summary of ccache configuration and statistics counters
+        run: ccache --show-stats
 
   format:
     runs-on: macos-latest
