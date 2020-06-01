@@ -151,6 +151,15 @@
         "code",
         "infra"
       ]
+    },
+    {
+      "login": "RobLoach",
+      "name": "Rob Loach",
+      "avatar_url": "https://avatars1.githubusercontent.com/u/25086?v=4",
+      "profile": "https://robloach.net",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 7,
