@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+
+# Set Composer's home directory if it's not set.
+if [ "$ASDF_INSTALL_VERSION" != "system" ]; then
+  if [ -z "$COMPOSER_HOME" ]; then
+    export COMPOSER_HOME=$ASDF_INSTALL_PATH/.composer
+  fi
+fi
