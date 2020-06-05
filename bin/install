@@ -97,6 +97,7 @@ construct_configure_options() {
     --with-curl \
     --without-gmp \
     --without-snmp \
+    --with-pdo-pgsql \
     --with-mysql=mysqlnd \
     --with-mysqli=mysqlnd \
     --with-pdo-mysql=mysqlnd \
