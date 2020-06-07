@@ -60,11 +60,15 @@ construct_configure_options() {
     --enable-calendar \
     --enable-dba \
     --enable-exif \
+    --enable-fpm \
     --enable-ftp \
+    --enable-gd \
     --enable-gd-native-ttf \
     --enable-intl \
     --enable-mbregex \
     --enable-mbstring \
+    --enable-mysqlnd \
+    --enable-pcntl \
     --enable-shmop \
     --enable-soap \
     --enable-sockets \
@@ -73,23 +77,20 @@ construct_configure_options() {
     --enable-sysvshm \
     --enable-wddx \
     --enable-zip \
-    --with-zip \
-    --with-gd \
-    --enable-gd \
-    --with-mhash \
-    --with-xmlrpc \
     --with-curl \
-    --without-gmp \
-    --without-snmp \
-    --with-pdo-pgsql \
+    --with-fpm-group=www-data \
+    --with-fpm-user=www-data \
+    --with-gd \
+    --with-mhash \
     --with-mysql=mysqlnd \
     --with-mysqli=mysqlnd \
     --with-pdo-mysql=mysqlnd \
-    --enable-mysqlnd \
-    --enable-pcntl \
-    --enable-fpm \
-    --with-fpm-user=www-data \
-    --with-fpm-group=www-data"
+    --with-pdo-pgsql \
+    --with-xmlrpc \
+    --with-zip \
+    --with-zlib \
+    --without-gmp \
+    --without-snmp"
 
   if [ "$PHP_CONFIGURE_OPTIONS" = "" ]; then
     local configure_options="$(os_based_configure_options) $global_config"
