@@ -29,7 +29,7 @@ jobs:
 
       - name: Install packages for macOS
         if: matrix.os == 'macos-latest'
-        run: brew install autoconf automake bison ccache freetype gettext icu4c krb5 libedit libiconv libjpeg libpng libxml2 libzip pkg-config re2c zlib
+        run: brew install autoconf automake bison freetype gettext icu4c krb5 libedit libiconv libjpeg libpng libxml2 libzip pkg-config re2c zlib
 
       - name: Add PKG_CONFIG_PATH environment variable for macOS
         if: matrix.os == 'macos-latest'
