@@ -3,8 +3,8 @@ name: Main workflow
 on:
   pull_request:
     paths-ignore:
-  push:
       - "**.md"
+  push:
     paths-ignore:
       - "**.md"
   schedule:
