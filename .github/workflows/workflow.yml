@@ -11,30 +11,35 @@ on:
     - cron: 0 0 * * 5
 
 jobs:
-  plugin_test:
-    strategy:
-      matrix:
-        os:
-          - macos-latest
-          - ubuntu-latest
+  plugin-test-docker:
+    runs-on: ubuntu-latest
 
-    runs-on: ${{ matrix.os }}
+    container:
+      image: ubuntu:latest
+
+    env:
+      DEBIAN_FRONTEND: noninteractive
 
     steps:
       - name: Install packages for Ubuntu
-        if: runner.os == 'Linux'
-        run: sudo apt-get update && sudo apt-get install autoconf bison build-essential curl gettext libcurl4-openssl-dev libedit-dev libicu-dev libjpeg-dev libmysqlclient-dev libonig-dev libpng-dev libpq-dev libreadline-dev libsqlite3-dev libssl-dev libxml2-dev libzip-dev openssl pkg-config re2c zlib1g-dev
+        run: apt-get update && apt-get install autoconf bison build-essential curl gettext git libcurl4-openssl-dev libedit-dev libicu-dev libjpeg-dev libmysqlclient-dev libonig-dev libpng-dev libpq-dev libreadline-dev libsqlite3-dev libssl-dev libxml2-dev libzip-dev openssl pkg-config re2c zlib1g-dev -y
 
-      - name: Install packages for macOS
-        if: runner.os == 'macOS'
+      - name: asdf_plugin_test
+        uses: asdf-vm/actions/plugin-test@v1
+        with:
+          command: php --version
+
+  plugin-test-macos:
+    runs-on: macos-latest
+
+    steps:
+      - name: Install packages
         run: brew install autoconf automake bison freetype gettext icu4c krb5 libedit libiconv libjpeg libpng libxml2 libzip pkg-config re2c zlib
 
-      - name: Add PKG_CONFIG_PATH environment variable for macOS
-        if: runner.os == 'macOS'
+      - name: Add PKG_CONFIG_PATH environment variable
         run: echo "::set-env name=PKG_CONFIG_PATH::$(brew --prefix icu4c)/lib/pkgconfig:$(brew --prefix krb5)/lib/pkgconfig:$(brew --prefix libedit)/lib/pkgconfig:$(brew --prefix libxml2)/lib/pkgconfig:$(brew --prefix openssl)/lib/pkgconfig"
 
-      - name: Add bison path for macOS
-        if: runner.os == 'macOS'
+      - name: Add bison path
         run: echo "::add-path::$(brew --prefix bison)/bin"
 
       - name: asdf_plugin_test
