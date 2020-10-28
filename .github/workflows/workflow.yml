@@ -28,6 +28,7 @@ jobs:
         uses: asdf-vm/actions/plugin-test@v1
         with:
           command: php --version
+          version: 7.4.12
 
   plugin-test-macos:
     runs-on: macos-latest
@@ -38,16 +39,17 @@ jobs:
 
       # export PKG_CONFIG_PATH="$(brew --prefix icu4c)/lib/pkgconfig:$(brew --prefix krb5)/lib/pkgconfig:$(brew --prefix libedit)/lib/pkgconfig:$(brew --prefix libxml2)/lib/pkgconfig:$(brew --prefix openssl)/lib/pkgconfig"
       - name: Add PKG_CONFIG_PATH environment variable
-        run: echo "::set-env name=PKG_CONFIG_PATH::$(brew --prefix icu4c)/lib/pkgconfig:$(brew --prefix krb5)/lib/pkgconfig:$(brew --prefix libedit)/lib/pkgconfig:$(brew --prefix libxml2)/lib/pkgconfig:$(brew --prefix openssl)/lib/pkgconfig"
+        run: echo "PKG_CONFIG_PATH=$(brew --prefix icu4c)/lib/pkgconfig:$(brew --prefix krb5)/lib/pkgconfig:$(brew --prefix libedit)/lib/pkgconfig:$(brew --prefix libxml2)/lib/pkgconfig:$(brew --prefix openssl)/lib/pkgconfig" >>"$GITHUB_ENV"
 
       # export PATH="$(brew --prefix bison)/bin:$PATH"
       - name: Add bison path
-        run: echo "::add-path::$(brew --prefix bison)/bin"
+        run: echo "$(brew --prefix bison)/bin" >>"$GITHUB_PATH"
 
       - name: asdf_plugin_test
         uses: asdf-vm/actions/plugin-test@v1
         with:
           command: php --version
+          version: 7.4.12
 
   format:
     runs-on: macos-latest
