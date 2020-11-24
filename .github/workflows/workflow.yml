@@ -2,11 +2,7 @@ name: Main workflow
 
 on:
   pull_request:
-    paths-ignore:
-      - "**.md"
   push:
-    paths-ignore:
-      - "**.md"
   schedule:
     - cron: 0 0 * * 5
 
@@ -28,7 +24,7 @@ jobs:
         uses: asdf-vm/actions/plugin-test@v1
         with:
           command: php --version
-          version: 7.4.12
+          version: 8.0.0
 
   plugin-test-macos:
     runs-on: macos-latest
@@ -49,7 +45,7 @@ jobs:
         uses: asdf-vm/actions/plugin-test@v1
         with:
           command: php --version
-          version: 7.4.12
+          version: 8.0.0
 
   format:
     runs-on: macos-latest
