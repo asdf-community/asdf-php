@@ -90,13 +90,18 @@ construct_configure_options() {
     --with-xmlrpc \
     --with-zip \
     --with-zlib \
-    --without-gmp \
     --without-snmp"
 
   if [ "$PHP_CONFIGURE_OPTIONS" = "" ]; then
     local configure_options="$(os_based_configure_options) $global_config"
   else
     local configure_options="$PHP_CONFIGURE_OPTIONS $global_config"
+  fi
+
+  if [ "${PHP_WITH_GMP:-no}" != "no" ]; then
+    configure_options="$configure_options --with-gmp"
+  else
+    configure_options="$configure_options --without-gmp"
   fi
 
   if [ "${PHP_WITHOUT_PEAR:-no}" != "no" ]; then
