@@ -39,6 +39,18 @@ PHP_WITHOUT_PEAR=yes asdf install php <version>
 Check [asdf](https://github.com/asdf-vm/asdf) readme for instructions on how to
 install & manage versions.
 
+## Global Composer Dependencies
+
+After installing a global composer package you will need to run `asdf reshim`.
+
+### Example
+
+```shell
+composer global require friendsofphp/php-cs-fixer
+asdf reshim
+php-cs-fixer --version
+```
+
 ## License
 
 Licensed under the
