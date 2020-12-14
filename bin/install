@@ -20,7 +20,6 @@ install_php() {
   download_source $install_type $version $source_path
 
   local operating_system=$(uname -a)
-  local configure_options=""
 
   if [[ $operating_system =~ "Darwin" ]]; then
     exit_if_homebrew_not_installed
