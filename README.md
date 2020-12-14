@@ -7,7 +7,7 @@ _Original version of this plugin created by
 
 ## Build History
 
-[![Build history](https://buildstats.info/github/chart/asdf-community/asdf-php?branch=master)](https://github.com/asdf-community/asdf-php/actions)
+[![Build history](https://buildstats.info/github/chart/skillshare/asdf-php?branch=master)](https://github.com/skillshare/asdf-php/actions)
 
 ## Prerequirements
 
@@ -21,7 +21,7 @@ for us to support them.
 ## Installation
 
 ```bash
-asdf plugin-add php https://github.com/asdf-community/asdf-php.git
+asdf plugin-add php https://github.com/skillshare/asdf-php.git
 ```
 
 #### Note: PHP-PEAR
