@@ -19,6 +19,62 @@ install_php() {
 
   download_source $install_type $version $source_path
 
+  local operating_system=$(uname -a)
+  local configure_options=""
+
+  if [[ $operating_system =~ "Darwin" ]]; then
+    exit_if_homebrew_not_installed
+
+    local bison_path=$(homebrew_package_path bison)
+    local icu4c_path=$(homebrew_package_path icu4c)
+    local krb5_path=$(homebrew_package_path krb5)
+    local libedit_path=$(homebrew_package_path libedit)
+    local libxml2_path=$(homebrew_package_path libxml2)
+    local openssl_path=$(homebrew_package_path openssl)
+
+    if [ -n "${bison_path}" ]; then
+      export "PATH=${bison_path}/bin:${PATH}"
+    else
+      echo "bison not installed" 1>&2
+      return 1
+    fi
+
+    if [ -n "${icu4c_path}" ]; then
+      export "PKG_CONFIG_PATH=${icu4c_path}/lib/pkgconfig:${PKG_CONFIG_PATH}"
+    else
+      echo "icu4c not installed" 1>&2
+      return 1
+    fi
+
+    if [ -n "${krb5_path}" ]; then
+      export "PKG_CONFIG_PATH=${krb5_path}/lib/pkgconfig:${PKG_CONFIG_PATH}"
+    else
+      echo "krb5 not installed" 1>&2
+      return 1
+    fi
+
+    if [ -n "${libedit_path}" ]; then
+      export "PKG_CONFIG_PATH=${libedit_path}/lib/pkgconfig:${PKG_CONFIG_PATH}"
+    else
+      echo "libedit not installed" 1>&2
+      return 1
+    fi
+
+    if [ -n "${libxml2_path}" ]; then
+      export "PKG_CONFIG_PATH=${libxml2_path}/lib/pkgconfig:${PKG_CONFIG_PATH}"
+    else
+      echo "libxml2 not installed" 1>&2
+      return 1
+    fi
+
+    if [ -n "${openssl_path}" ]; then
+      export "PKG_CONFIG_PATH=${openssl_path}/lib/pkgconfig:${PKG_CONFIG_PATH}"
+    else
+      echo "openssl not installed" 1>&2
+      return 1
+    fi
+  fi
+
   # Running this in a subshell because we don't to disturb the current
   # working directory.
   (
@@ -139,7 +195,7 @@ os_based_configure_options() {
     exit_if_homebrew_not_installed
 
     local freetype_path=$(homebrew_package_path freetype)
-    local bison27_path=$(homebrew_package_path bison@2.7)
+    local bison_path=$(homebrew_package_path bison)
     local gettext_path=$(homebrew_package_path gettext)
     local icu4c_path=$(homebrew_package_path icu4c)
     local webp_path=$(homebrew_package_path webp)
@@ -160,8 +216,8 @@ os_based_configure_options() {
       configure_options="--with-freetype-dir=$freetype_path"
     fi
 
-    if [ "$bison27_path" = "" ]; then
-      export ASDF_PKG_MISSING="$ASDF_PKG_MISSING bison27"
+    if [ "$bison_path" = "" ]; then
+      export ASDF_PKG_MISSING="$ASDF_PKG_MISSING bison"
     fi
 
     if [ "$gettext_path" = "" ]; then
