@@ -17,8 +17,6 @@ install_php() {
   local configure_options="$(construct_configure_options $install_path)"
   local make_flags="-j$ASDF_CONCURRENCY"
 
-  download_source $install_type $version $source_path
-
   local operating_system=$(uname -a)
 
   if [[ $operating_system =~ "Darwin" ]]; then
@@ -73,6 +71,8 @@ install_php() {
       return 1
     fi
   fi
+
+  download_source $install_type $version $source_path
 
   # Running this in a subshell because we don't to disturb the current
   # working directory.
