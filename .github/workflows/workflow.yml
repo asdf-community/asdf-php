@@ -8,17 +8,22 @@ on:
 
 jobs:
   plugin-test-docker:
-    runs-on: ubuntu-latest
-
-    container:
-      image: ubuntu:latest
+    strategy:
+      matrix:
+        container:
+          - ubuntu:latest
 
     env:
       DEBIAN_FRONTEND: noninteractive
 
+    container:
+      image: ${{ matrix.container }}
+
+    runs-on: ubuntu-latest
+
     steps:
       - name: Install packages
-        run: apt-get update && apt-get install autoconf bison build-essential curl gettext git libgd-dev libcurl4-openssl-dev libedit-dev libicu-dev libjpeg-dev libmysqlclient-dev libonig-dev libpng-dev libpq-dev libreadline-dev libsqlite3-dev libssl-dev libxml2-dev libzip-dev openssl pkg-config re2c zlib1g-dev -y
+        run: apt-get update && apt-get install -y autoconf bison build-essential curl gettext git libgd-dev libcurl4-openssl-dev libedit-dev libicu-dev libjpeg-dev libmysqlclient-dev libonig-dev libpng-dev libpq-dev libreadline-dev libsqlite3-dev libssl-dev libxml2-dev libzip-dev openssl pkg-config re2c zlib1g-dev
 
       - name: asdf_plugin_test
         uses: asdf-vm/actions/plugin-test@v1
@@ -26,8 +31,13 @@ jobs:
           command: php --version
           version: 8.0.0
 
-  plugin-test-macos:
-    runs-on: macos-latest
+  plugin-test-vm:
+    strategy:
+      matrix:
+        os:
+          - macos-latest
+
+    runs-on: ${{ matrix.os }}
 
     steps:
       - name: Install packages
