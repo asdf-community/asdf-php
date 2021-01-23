@@ -12,6 +12,10 @@ jobs:
       matrix:
         container:
           - ubuntu:latest
+        php-version:
+          - 7.4.14
+          - 8.0.0
+          - latest
 
     env:
       DEBIAN_FRONTEND: noninteractive
@@ -29,13 +33,17 @@ jobs:
         uses: asdf-vm/actions/plugin-test@v1
         with:
           command: php --version
-          version: 8.0.0
+          version: ${{ matrix.php-version }}
 
   plugin-test-vm:
     strategy:
       matrix:
         os:
           - macos-latest
+        php-version:
+          - 7.4.14
+          - 8.0.0
+          - latest
 
     runs-on: ${{ matrix.os }}
 
@@ -47,10 +55,10 @@ jobs:
         uses: asdf-vm/actions/plugin-test@v1
         with:
           command: php --version
-          version: 8.0.0
+          version: ${{ matrix.php-version }}
 
   format:
-    runs-on: macos-latest
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
