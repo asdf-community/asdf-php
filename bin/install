@@ -158,7 +158,7 @@ construct_configure_options() {
     configure_options="$configure_options --with-pear"
   fi
 
-  if [ "${PHP_WITHOUT_PGSQL:-no}" != "no" ]; then
+  if [ "${PHP_WITHOUT_PDO_PGSQL:-no}" != "no" ]; then
     configure_options="$configure_options"
   else
     configure_options="$configure_options --with-pdo-pgsql"
