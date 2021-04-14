@@ -135,7 +135,6 @@ construct_configure_options() {
     --with-mysql=mysqlnd \
     --with-mysqli=mysqlnd \
     --with-pdo-mysql=mysqlnd \
-    --with-pdo-pgsql \
     --with-xmlrpc \
     --with-zip \
     --with-zlib \
@@ -157,6 +156,12 @@ construct_configure_options() {
     configure_options="$configure_options --without-pear"
   else
     configure_options="$configure_options --with-pear"
+  fi
+
+  if [ "${PHP_WITHOUT_PDO_PGSQL:-no}" != "no" ]; then
+    configure_options="$configure_options"
+  else
+    configure_options="$configure_options --with-pdo-pgsql"
   fi
 
   echo "$configure_options"
