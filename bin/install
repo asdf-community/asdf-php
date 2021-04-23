@@ -96,7 +96,7 @@ install_php() {
 
   # it's not obvious where php.ini should be placed, let us make it easy for the user
   mkdir -p $install_path/conf.d/
-  echo "# add system-wide php configuration options here" > $install_path/conf.d/php.ini
+  echo "# add system-wide php configuration options here" >$install_path/conf.d/php.ini
 }
 
 install_composer() {
