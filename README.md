@@ -21,20 +21,19 @@ for us to support them.
 ## Installation
 
 ```bash
-asdf plugin-add php
+asdf plugin-add php https://github.com/asdf-community/asdf-php.git
 ```
 
 Since this plugin compiles PHP from source, you'll want to ensure all other required packages are installed.
 After you've installed additional system packages, install a specific PHP version:
 
 ```bash
-asdf install php 7.4.16
+asdf install php latest
 ```
 
 You can test to ensure the installation was successful:
 
 ```bash
-asdf reshim
 php --version
 ```
 
@@ -48,7 +47,7 @@ echo "extension=redis.so
 extension=imagick.so" > $(asdf where php)/conf.d/php.ini
 ```
 
-#### MacOS
+#### macOS
 
 To install PHP on MacOS, you'll need a set of packages installed via homebrew:
 
