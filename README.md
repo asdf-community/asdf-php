@@ -24,18 +24,7 @@ for us to support them.
 asdf plugin-add php https://github.com/asdf-community/asdf-php.git
 ```
 
-Since this plugin compiles PHP from source, you'll want to ensure all other required packages are installed.
-After you've installed additional system packages, install a specific PHP version:
-
-```bash
-asdf install php latest
-```
-
-You can test to ensure the installation was successful:
-
-```bash
-php --version
-```
+## Note
 
 Composer is installed globally alongside PHP by default. If your application requires additional php extensions, you may need to install them via `pecl`. For example:
 
@@ -49,7 +38,7 @@ extension=imagick.so" > $(asdf where php)/conf.d/php.ini
 
 #### macOS
 
-To install PHP on MacOS, you'll need a set of packages [installed via homebrew](https://github.com/asdf-community/asdf-php/blob/248e9c6e2a7824510788f05e8cee848a62200b65/.github/workflows/workflow.yml#L52).
+To install PHP on macOS, you'll need a set of packages [installed via homebrew](https://github.com/asdf-community/asdf-php/blob/248e9c6e2a7824510788f05e8cee848a62200b65/.github/workflows/workflow.yml#L52).
 
 You may want to install these packages using `upgrade` instead of `install` to ensure the latest version of all required packages is installed.
 
@@ -61,7 +50,7 @@ brew install gmp libsodium imagemagick
 
 Note that the supported extension are not exhaustive, so you may need edit the `bin/install` script to support additional extension. Feel free to submit a PR for any missing extensions.
 
-#### Note: PHP-PEAR
+#### PHP-PEAR
 
 If PHP PEAR is down you can install PHP without PEAR. Specify `PHP_WITHOUT_PEAR` variable with any value
 (except no), eg:
