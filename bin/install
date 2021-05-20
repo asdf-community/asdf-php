@@ -22,12 +22,6 @@ install_php() {
 
   local operating_system=$(uname -a)
 
-      echo "test2"
-    echo $(locate libpng)
-    echo $(locate libjpeg)
-    exit 1
-
-
   # many macos packages require modifications to various env variables in order for the build process to pick
   # up the correct version of the packages. These checks are done here instead of `construct_configure_options`
   # because modifications to $PKG_CONFIG_PATH are not propogated from the subshell to this shell.
@@ -219,7 +213,6 @@ os_based_configure_options() {
 
     local missing_required_packages=""
 
-    local bison_path=$(homebrew_package_path bison)
     local bzip2_path=$(homebrew_package_path bzip2)
     local freetype_path=$(homebrew_package_path freetype)
     local gettext_path=$(homebrew_package_path gettext)
@@ -256,10 +249,6 @@ os_based_configure_options() {
       configure_options="$configure_options --with-freetype-dir=$freetype_path"
     else
       missing_required_packages="freetype"
-    fi
-
-    if [ -n "$bison_path" ]; then
-      missing_required_packages="$missing_required_packages bison"
     fi
 
     if [ -n "$gettext_path" ]; then
@@ -341,12 +330,8 @@ os_based_configure_options() {
       missing_required_packages="$missing_required_packages libiconv"
     fi
   else
-    echo "test"
-    echo $(locate libpng)
-    echo $(locate libjpeg)
-    exit 1
-    local jpeg_path=$(locate libjpeg | awk '{ print length(), $0 | "sort -n" }' | cut -d" " -f2- | head -n 1)
-    local libpng_path=$(locate libpng | awk '{ print length(), $0 | "sort -n" }' | cut -d" " -f2- | head -n 1)
+    local jpeg_path=$(locate libjpeg.so | awk '{ print length(), $0 | "sort -n" }' | cut -d" " -f2- | head -n 1 | xargs dirname)
+    local libpng_path=$(locate libpng.so | awk '{ print length(), $0 | "sort -n" }' | cut -d" " -f2- | head -n 1 | xargs dirname)
     configure_options="--with-openssl --with-curl --with-zlib --with-readline --with-gettext"
 
     if [ "$jpeg_path" = "" ]; then
