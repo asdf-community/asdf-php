@@ -335,8 +335,8 @@ os_based_configure_options() {
       missing_required_packages="$missing_required_packages libiconv"
     fi
   else
-    local jpeg_path=$(locate libjpeg.so | awk '{ print length(), $0 | "sort -n" }' | cut -d" " -f2- | head -n 1)
-    local libpng_path=$(locate libpng.so | awk '{ print length(), $0 | "sort -n" }' | cut -d" " -f2- | head -n 1)
+    local jpeg_path=$(locate libjpeg | awk '{ print length(), $0 | "sort -n" }' | cut -d" " -f2- | head -n 1)
+    local libpng_path=$(locate libpng | awk '{ print length(), $0 | "sort -n" }' | cut -d" " -f2- | head -n 1)
     configure_options="--with-openssl --with-curl --with-zlib --with-readline --with-gettext"
 
     if [ "$jpeg_path" = "" ]; then
