@@ -45,7 +45,7 @@ You may want to install these packages using `upgrade` instead of `install` to e
 There's also a set of optional packages which enable additional extensions to be enabled:
 
 ```
-brew install gmp libsodium imagemagick
+brew install gmp libsodium imagemagick bison zlib libiconv
 ```
 
 Note that the supported extension are not exhaustive, so you may need edit the `bin/install` script to support additional extension. Feel free to submit a PR for any missing extensions.
