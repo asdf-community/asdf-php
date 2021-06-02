@@ -13,15 +13,24 @@ install_php() {
     local tmp_download_dir=${TMPDIR%/}
   fi
 
+  echo "Installing PHP ${version}..."
   echo "Determining configuration options..."
+
   local source_path=$(get_download_file_path $install_type $version $tmp_download_dir)
   local configure_options="$(construct_configure_options $install_path)"
   local make_flags="-j$ASDF_CONCURRENCY"
 
   local operating_system=$(uname -a)
 
+  # many macos packages require modifications to various env variables in order for the build process to pick
+  # up the correct version of the packages. These checks are done here instead of `construct_configure_options`
+  # because modifications to $PKG_CONFIG_PATH are not propogated from the subshell to this shell.
   if [[ $operating_system =~ "Darwin" ]]; then
     exit_if_homebrew_not_installed
+
+    local missing_required_packages=""
+
+    echo "Configuring compilation variables for custom packages..."
 
     local bison_path=$(homebrew_package_path bison)
     local icu4c_path=$(homebrew_package_path icu4c)
@@ -33,37 +42,42 @@ install_php() {
     if [ -n "$bison_path" ]; then
       export "PATH=${bison_path}/bin:${PATH}"
     else
-      export ASDF_PKG_MISSING="$ASDF_PKG_MISSING bison"
+      missing_required_packages="$missing_required_packages bison"
     fi
 
     if [ -n "$icu4c_path" ]; then
       export "PKG_CONFIG_PATH=${icu4c_path}/lib/pkgconfig:${PKG_CONFIG_PATH}"
     else
-      export ASDF_PKG_MISSING="$ASDF_PKG_MISSING icu4c"
+      missing_required_packages="$missing_required_packages icu4c"
     fi
 
     if [ -n "$krb5_path" ]; then
       export "PKG_CONFIG_PATH=${krb5_path}/lib/pkgconfig:${PKG_CONFIG_PATH}"
     else
-      export ASDF_PKG_MISSING="$ASDF_PKG_MISSING krb5"
+      missing_required_packages="$missing_required_packages krb5"
     fi
 
     if [ -n "$libedit_path" ]; then
       export "PKG_CONFIG_PATH=${libedit_path}/lib/pkgconfig:${PKG_CONFIG_PATH}"
     else
-      export ASDF_PKG_MISSING="$ASDF_PKG_MISSING libedit"
+      missing_required_packages="$missing_required_packages libedit"
     fi
 
     if [ -n "$libxml2_path" ]; then
       export "PKG_CONFIG_PATH=${libxml2_path}/lib/pkgconfig:${PKG_CONFIG_PATH}"
     else
-      export ASDF_PKG_MISSING="$ASDF_PKG_MISSING libxml2"
+      missing_required_packages="$missing_required_packages libxml2"
     fi
 
     if [ -n "$openssl_path" ]; then
       export "PKG_CONFIG_PATH=${openssl_path}/lib/pkgconfig:${PKG_CONFIG_PATH}"
     else
-      export ASDF_PKG_MISSING="$ASDF_PKG_MISSING openssl"
+      missing_required_packages="$missing_required_packages openssl"
+    fi
+
+    if [ -n "$missing_required_packages" ]; then
+      echo "Required packages are missing: $missing_required_packages"
+      exit 1
     fi
   fi
 
@@ -177,9 +191,7 @@ construct_configure_options() {
 homebrew_package_path() {
   local package_name=$1
 
-  if [ "$(brew ls --versions $package_name)" = "" ]; then
-    echo ""
-  else
+  if [ -n "$(brew ls --versions $package_name)" ]; then
     echo "$(brew --prefix $package_name)"
   fi
 }
@@ -199,7 +211,8 @@ os_based_configure_options() {
 
     exit_if_homebrew_not_installed
 
-    local bison_path=$(homebrew_package_path bison)
+    local missing_required_packages=""
+
     local bzip2_path=$(homebrew_package_path bzip2)
     local freetype_path=$(homebrew_package_path freetype)
     local gettext_path=$(homebrew_package_path gettext)
@@ -235,106 +248,108 @@ os_based_configure_options() {
     if [ -n "$freetype_path" ]; then
       configure_options="$configure_options --with-freetype-dir=$freetype_path"
     else
-      export ASDF_PKG_MISSING="freetype"
-    fi
-
-    if [ -n "$bison_path" ]; then
-      export ASDF_PKG_MISSING="$ASDF_PKG_MISSING bison"
+      missing_required_packages="freetype"
     fi
 
     if [ -n "$gettext_path" ]; then
       configure_options="$configure_options --with-gettext=$gettext_path"
     else
-      export ASDF_PKG_MISSING="$ASDF_PKG_MISSING gettext"
+      missing_required_packages="$missing_required_packages gettext"
     fi
 
+    # PHP 7.4+ will pick up ICU with pkg-config only, previous versions will use pkg-config or --with-icu-dir.
     if [ -n "$icu4c_path" ]; then
       configure_options="$configure_options --with-icu-dir=$icu4c_path"
     else
-      export ASDF_PKG_MISSING="$ASDF_PKG_MISSING icu4c"
+      missing_required_packages="$missing_required_packages icu4c"
     fi
 
     if [ -n "$jpeg_path" ]; then
       configure_options="$configure_options --with-jpeg-dir=$jpeg_path"
     else
-      export ASDF_PKG_MISSING="$ASDF_PKG_MISSING jpeg"
+      missing_required_packages="$missing_required_packages jpeg"
     fi
 
     if [ -n "$webp_path" ]; then
       configure_options="$configure_options --with-webp-dir=$webp_path"
     else
-      export ASDF_PKG_MISSING="$ASDF_PKG_MISSING webp"
+      missing_required_packages="$missing_required_packages webp"
     fi
 
     if [ -n "$libpng_path" ]; then
       configure_options="$configure_options --with-png-dir=$libpng_path"
     else
-      export ASDF_PKG_MISSING="$ASDF_PKG_MISSING libpng"
+      missing_required_packages="$missing_required_packages libpng"
     fi
 
     if [ -n "$openssl_path" ]; then
       configure_options="$configure_options --with-openssl=$openssl_path"
     else
-      export ASDF_PKG_MISSING="$ASDF_PKG_MISSING openssl"
+      missing_required_packages="$missing_required_packages openssl"
     fi
 
     if [ -n "$libxml2_path" ]; then
       configure_options="$configure_options --with-libxml-dir=$libxml2_path"
     else
-      export ASDF_PKG_MISSING="$ASDF_PKG_MISSING libxml2"
+      missing_required_packages="$missing_required_packages libxml2"
     fi
 
     if [ -n "$zlib_path" ]; then
       configure_options="$configure_options --with-zlib-dir=$zlib_path"
     else
-      export ASDF_PKG_MISSING="$ASDF_PKG_MISSING zlib"
+      missing_required_packages="$missing_required_packages zlib"
     fi
 
     if [ -n "$libzip_path" ]; then
       configure_options="$configure_options --with-libzip=$libzip_path"
     else
-      export ASDF_PKG_MISSING="$ASDF_PKG_MISSING libzip"
+      missing_required_packages="$missing_required_packages libzip"
     fi
 
     if [ -n "$readline_path" ]; then
       configure_options="$configure_options --with-readline=$readline_path"
     else
-      export ASDF_PKG_MISSING="$ASDF_PKG_MISSING readline"
+      missing_required_packages="$missing_required_packages readline"
     fi
 
     if [ -n "$libedit_path" ]; then
       configure_options="$configure_options --with-libedit=$libedit_path"
     else
-      export ASDF_PKG_MISSING="$ASDF_PKG_MISSING libedit"
+      missing_required_packages="$missing_required_packages libedit"
     fi
 
     if [ -n "$bzip2_path" ]; then
       configure_options="$configure_options --with-bz2=$bzip2_path"
     else
-      export ASDF_PKG_MISSING="$ASDF_PKG_MISSING bzip2"
+      missing_required_packages="$missing_required_packages bzip2"
     fi
 
     if [ -n "$iconv_path" ]; then
       configure_options="$configure_options --with-iconv=$iconv_path"
     else
-      export ASDF_PKG_MISSING="$ASDF_PKG_MISSING libiconv"
+      missing_required_packages="$missing_required_packages libiconv"
     fi
   else
-    local jpeg_path=$(locate libjpeg.so | awk '{ print length(), $0 | "sort -n" }' | cut -d" " -f2- | head -n 1)
-    local libpng_path=$(locate libpng.so | awk '{ print length(), $0 | "sort -n" }' | cut -d" " -f2- | head -n 1)
+    local jpeg_path=$(locate libjpeg.so | awk '{ print length(), $0 | "sort -n" }' | cut -d" " -f2- | head -n 1 | xargs dirname)
+    local libpng_path=$(locate libpng.so | awk '{ print length(), $0 | "sort -n" }' | cut -d" " -f2- | head -n 1 | xargs dirname)
     configure_options="--with-openssl --with-curl --with-zlib --with-readline --with-gettext"
 
     if [ "$jpeg_path" = "" ]; then
-      export ASDF_PKG_MISSING="$ASDF_PKG_MISSING jpeg"
+      missing_required_packages="$missing_required_packages jpeg"
     else
       configure_options="$configure_options --with-jpeg-dir=$jpeg_path --with-jpeg"
     fi
 
     if [ "$libpng_path" = "" ]; then
-      export ASDF_PKG_MISSING="$ASDF_PKG_MISSING libpng"
+      missing_required_packages="$missing_required_packages libpng"
     else
       configure_options="$configure_options --with-png-dir=$libpng_path --with-png"
     fi
+  fi
+
+  if [ -n "$missing_required_packages" ]; then
+    echo "Required packages are missing: $missing_required_packages"
+    exit 1
   fi
 
   echo $configure_options

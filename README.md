@@ -40,7 +40,7 @@ extension=imagick.so" > $(asdf where php)/conf.d/php.ini
 
 To install PHP on macOS, you'll need a set of packages [installed via homebrew](https://github.com/asdf-community/asdf-php/blob/248e9c6e2a7824510788f05e8cee848a62200b65/.github/workflows/workflow.yml#L52).
 
-You may want to install these packages using `upgrade` instead of `install` to ensure the latest version of all required packages is installed.
+You may want to install these packages using `upgrade` instead of `install` to ensure the latest version of all required packages is installed. In some cases, newer versions of a package may cause compilation issues for specific PHP versions and you may need to install an older version. When you install an older version of a package, ensure it uses the exact same name as the expected package ([more info here](http://mikebian.co/installing-an-old-homebrew-package/)).
 
 There's also a set of optional packages which enable additional extensions to be enabled:
 
