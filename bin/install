@@ -77,6 +77,7 @@ install_php() {
 
     if [ -n "$missing_required_packages" ]; then
       echo "Required packages are missing: $missing_required_packages"
+      echo "Install with: brew install $missing_required_packages"
       exit 1
     fi
   fi
