@@ -168,7 +168,21 @@ construct_configure_options() {
   if [ "${PHP_WITHOUT_PDO_PGSQL:-no}" != "no" ]; then
     configure_options="$configure_options"
   else
-    configure_options="$configure_options --with-pdo-pgsql"
+    local operating_system=$(uname -a)
+
+    if [[ $operating_system =~ "Darwin" ]]; then
+      exit_if_homebrew_not_installed
+
+      local libpq_path=$(homebrew_package_path libpq)
+
+      if [ -n "$libpq_path" ]; then
+        configure_options="$configure_options --with-pdo-pgsql=$libpq_path"
+      else
+        export ASDF_PKG_MISSING="$ASDF_PKG_MISSING libpq"
+      fi
+    else
+      configure_options="$configure_options --with-pdo-pgsql"
+    fi
   fi
 
   echo "$configure_options"
