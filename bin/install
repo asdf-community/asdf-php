@@ -213,6 +213,10 @@ os_based_configure_options() {
 
     exit_if_homebrew_not_installed
 
+    if [[ `uname -m` == 'arm64' ]]; then
+      configure_options="--without-pcre-jit"
+    fi
+
     local bison_path=$(homebrew_package_path bison)
     local bzip2_path=$(homebrew_package_path bzip2)
     local freetype_path=$(homebrew_package_path freetype)
@@ -235,7 +239,7 @@ os_based_configure_options() {
     local sodium_path=$(homebrew_package_path libsodium)
 
     if [ -n "$gmp_path" ]; then
-      configure_options="--with-gmp=$gmp_path"
+      configure_options="$configure_options --with-gmp=$gmp_path"
     else
       echo "gmp not found, not including in installation"
     fi
