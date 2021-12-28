@@ -151,6 +151,8 @@ construct_configure_options() {
     --with-xmlrpc \
     --with-zip \
     --with-zlib \
+    --with-xsl \
+    --with-sodium \
     --without-snmp"
 
   if [ "$PHP_CONFIGURE_OPTIONS" = "" ]; then
