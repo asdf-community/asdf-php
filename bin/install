@@ -28,7 +28,7 @@ install_php() {
     local krb5_path=$(homebrew_package_path krb5)
     local libedit_path=$(homebrew_package_path libedit)
     local libxml2_path=$(homebrew_package_path libxml2)
-    local openssl_path=$(homebrew_package_path openssl)
+    local openssl_path=$(homebrew_package_path openssl@1.1)
 
     if [ -n "$bison_path" ]; then
       export "PATH=${bison_path}/bin:${PATH}"
@@ -210,7 +210,7 @@ os_based_configure_options() {
     local libpng_path=$(homebrew_package_path libpng)
     local libxml2_path=$(homebrew_package_path libxml2)
     local libzip_path=$(homebrew_package_path libzip)
-    local openssl_path=$(homebrew_package_path openssl)
+    local openssl_path=$(homebrew_package_path openssl@1.1)
     local readline_path=$(homebrew_package_path readline)
     local webp_path=$(homebrew_package_path webp)
     local zlib_path=$(homebrew_package_path zlib)
