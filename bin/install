@@ -185,6 +185,12 @@ construct_configure_options() {
     fi
   fi
 
+  if [ "${PHP_WITHOUT_PCRE_JIT:-no}" != "no" ]; then
+    configure_options="$configure_options"
+  else
+    configure_options="$configure_options --without-pcre-jit"
+  fi
+
   echo "$configure_options"
 }
 
