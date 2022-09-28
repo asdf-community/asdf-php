@@ -185,6 +185,12 @@ construct_configure_options() {
     fi
   fi
 
+  if [ "${PHP_WITHOUT_PCRE_JIT:-no}" != "no" ]; then
+    configure_options="$configure_options"
+  else
+    configure_options="$configure_options --without-pcre-jit"
+  fi
+
   echo "$configure_options"
 }
 
@@ -212,10 +218,6 @@ os_based_configure_options() {
   if [[ $operating_system =~ "Darwin" ]]; then
 
     exit_if_homebrew_not_installed
-
-    if [[ $(uname -m) == 'arm64' ]]; then
-      configure_options="--without-pcre-jit"
-    fi
 
     local bison_path=$(homebrew_package_path bison)
     local bzip2_path=$(homebrew_package_path bzip2)
