@@ -81,6 +81,12 @@ install_php() {
 
     # Target is OS-specific
     # target=$(get_target)
+    
+    echo patching "$(pwd)/ext/phar/build_precommand.php"
+    sed -i .bak '3i\
+ ini_set("pcre.jit", "0");
+' ext/phar/build_precommand.php
+
 
     # Build PHP
     echo "Running buildconfig..."
