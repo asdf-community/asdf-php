@@ -153,6 +153,9 @@ construct_configure_options() {
     --with-zlib \
     --without-snmp"
 
+  local operating_system=$(uname -a)
+  local arch=$(uname -m)
+
   if [ "$PHP_CONFIGURE_OPTIONS" = "" ]; then
     local configure_options="$(os_based_configure_options) $global_config"
   else
@@ -168,8 +171,6 @@ construct_configure_options() {
   if [ "${PHP_WITHOUT_PDO_PGSQL:-no}" != "no" ]; then
     configure_options="$configure_options"
   else
-    local operating_system=$(uname -a)
-
     if [[ $operating_system =~ "Darwin" ]]; then
       exit_if_homebrew_not_installed
 
@@ -185,9 +186,8 @@ construct_configure_options() {
     fi
   fi
 
-  if [ "${PHP_WITHOUT_PCRE_JIT:-no}" != "no" ]; then
-    configure_options="$configure_options"
-  else
+  # Disable PCRE JIT either if PHP_WITHOUT_PCRE_JIT is set or an Arm-based Mac is detected
+  if [[ "${PHP_WITHOUT_PCRE_JIT:-no}" != "no" || ($operating_system =~ "Darwin" && $arch == "arm64")]]; then
     configure_options="$configure_options --without-pcre-jit"
   fi
 
