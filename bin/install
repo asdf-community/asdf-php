@@ -191,6 +191,11 @@ construct_configure_options() {
     configure_options="$configure_options --without-pcre-jit"
   fi
 
+  # Disable Opcache JIT to prevent errors with capstone
+  if [[($operating_system =~ "Darwin" && $arch == "arm64")]]; then
+    configure_options="$configure_options --disable-opcache-jit"
+  fi
+
   echo "$configure_options"
 }
 
