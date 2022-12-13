@@ -16,7 +16,7 @@ install_php() {
   echo "Determining configuration options..."
   local source_path=$(get_download_file_path $install_type $version $tmp_download_dir)
   local configure_options="$(construct_configure_options $install_path)"
-  local make_flags="-j$ASDF_CONCURRENCY -DU_DEFINE_FALSE_AND_TRUE=1"
+  local make_flags="-j$ASDF_CONCURRENCY"
 
   local operating_system=$(uname -a)
 
@@ -65,6 +65,9 @@ install_php() {
     else
       export ASDF_PKG_MISSING="$ASDF_PKG_MISSING openssl"
     fi
+
+    export CFLAGS="-DU_DEFINE_FALSE_AND_TRUE=1"
+    export CXXFLAGS="-DU_DEFINE_FALSE_AND_TRUE=1"
   fi
 
   echo "Downloading source code..."
