@@ -16,7 +16,7 @@ install_php() {
   echo "Determining configuration options..."
   local source_path=$(get_download_file_path $install_type $version $tmp_download_dir)
   local configure_options="$(construct_configure_options $install_path)"
-  local make_flags="-j$ASDF_CONCURRENCY"
+  local make_flags="-j$ASDF_CONCURRENCY -DU_DEFINE_FALSE_AND_TRUE=1"
 
   local operating_system=$(uname -a)
 
