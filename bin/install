@@ -410,4 +410,6 @@ get_php_version() {
 }
 
 install_php "$ASDF_INSTALL_TYPE" "$ASDF_INSTALL_VERSION" "$ASDF_INSTALL_PATH"
-install_composer "$ASDF_INSTALL_PATH"
+if [ "${PHP_INSTALL_COMPOSER:-yes}" == "yes" ]; then
+  install_composer "$ASDF_INSTALL_PATH"
+fi
