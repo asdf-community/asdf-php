@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+
+get_legacy_version() {
+  current_file="$1"
+  basename="$(basename -- "$current_file")"
+
+  if [ "$basename" == ".php-version" ]; then
+    # Get version from .php-version file (filters out 'php-' prefix if it exists).
+    # The .php-version is used by rbenv and now rvm.
+    php_version="$(cat "$current_file")"
+    php_prefix="php-"
+    PHP_VERSION="${php_version/#$php_prefix/}"
+  fi
+
+  echo "$PHP_VERSION"
+}
+
+get_legacy_version "$1"
