@@ -57,6 +57,12 @@ If PHP PEAR is down you can install PHP without PEAR. Specify `PHP_WITHOUT_PEAR`
 PHP_WITHOUT_PEAR=yes asdf install php <version>
 ```
 
+#### Patch support
+
+```
+PHP_APPLY_PATCHES=$'dir/1.patch\n2.patch\nhttp://example.com/3.patch' asdf install php 7.1.1
+```
+
 ## Usage
 
 Check [asdf](https://github.com/asdf-vm/asdf) readme for instructions on how to
