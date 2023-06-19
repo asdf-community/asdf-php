@@ -191,8 +191,8 @@ construct_configure_options() {
     configure_options="$configure_options --without-pcre-jit"
   fi
 
-  if [ "${PHP_ADDITIONAL_CONFIG_OPTIONS" != "" ]; then
-    configure_options="$configure_options ${PHP_ADDITIONAL_CONFIG_OPTIONS}";
+  if [ "$PHP_ADDITIONAL_CONFIG_OPTIONS" != "" ]; then
+    configure_options="$configure_options $PHP_ADDITIONAL_CONFIG_OPTIONS";
   fi
 
   echo "$configure_options"
