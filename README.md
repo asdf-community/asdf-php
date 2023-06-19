@@ -62,6 +62,15 @@ PHP_WITHOUT_PEAR=yes asdf install php <version>
 Check [asdf](https://github.com/asdf-vm/asdf) readme for instructions on how to
 install & manage versions.
 
+### Pass additional ./configure options in the build process
+
+Set the PHP_ADDITIONAL_CONFIG_OPTIONS env var with the additional options to add them to the ./configure call when asdf builds PHP:
+
+Example:
+```shell
+PHP_ADDITIONAL_CONFIG_OPTIONS="--with-password-argon2" asdf install php latest
+```
+
 ## Global Composer Dependencies
 
 Composer is installed globally by default. To use it, you'll need to reshim:
