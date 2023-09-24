@@ -409,5 +409,59 @@ get_php_version() {
   fi
 }
 
+install_pecl_extension() {
+  local install_path=$1
+  local extension_name=$2
+  local extension_get_url=$3
+
+  echo "Installing PECL extension $extension_name..."
+
+  if $install_path/bin/pecl install $extension_name; then
+    echo "PECL extension $extension_name installed successfully."
+  else
+    echo "Failed to install $extension_name using pecl. Downloading manually from $extension_get_url..."
+
+    local tmp_dir=$(mktemp -d)
+    local file_name="$tmp_dir/$extension_name.tgz"
+
+    curl -L $extension_get_url -o $file_name || exit 1
+    $install_path/bin/pecl install $file_name || exit 1
+
+    echo "PECL extension $extension_name installed successfully."
+  fi
+
+  local ini_file="$install_path/conf.d/php.ini"
+
+  echo "Adding extension=$extension_name.so to $ini_file"
+  echo "extension=$extension_name.so" >> "$ini_file"
+}
+
+create_composer_auth_file() {
+  local install_path=$1
+  local auth_json_content=$2
+
+  echo "Creating $install_path/.composer/auth.json..."
+
+  mkdir -p $install_path/.composer
+  echo $auth_json_content > $install_path/.composer/auth.json
+}
+
 install_php "$ASDF_INSTALL_TYPE" "$ASDF_INSTALL_VERSION" "$ASDF_INSTALL_PATH"
 install_composer "$ASDF_INSTALL_PATH"
+
+install_pecl_extension "$ASDF_INSTALL_PATH" "redis" "http://pecl.php.net/get/redis"
+
+GITHUB_OAUTH_TOKEN="${GITHUB_OAUTH_TOKEN:-}"
+
+if [ -z "$GITHUB_OAUTH_TOKEN"]; then
+  echo "Error: GITHUB_OAUTH_TOKEN environment variable is not set."
+  exit 1
+fi
+
+AUTH_JSON_CONTENT="{
+  \"github-oauth\": {
+    \"github.com\": \"$GITHUB_OAUTH_TOKEN\"
+  }
+}"
+
+create_composer_auth_file "$ASDF_INSTALL_PATH" "$AUTH_JSON_CONTENT"
