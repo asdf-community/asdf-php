@@ -159,6 +159,10 @@ construct_configure_options() {
     local configure_options="$PHP_CONFIGURE_OPTIONS $global_config"
   fi
 
+  if [ -n "${PHP_ADDITIONAL_CONFIGURE_OPTIONS}" ]; then
+    configure_options="${configure_options} ${PHP_ADDITIONAL_CONFIGURE_OPTIONS}"
+  fi
+
   if [ "${PHP_WITHOUT_PEAR:-no}" != "no" ]; then
     configure_options="$configure_options --without-pear"
   else
