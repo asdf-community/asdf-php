@@ -368,7 +368,7 @@ os_based_configure_options() {
     if [ "$libsodium_path" = "" ]; then
       export ASDF_PKG_MISSING="$ASDF_PKG_MISSING libsodium"
     else
-      configure_options="$configure_options --with-sodium=$libsodium_path"
+      configure_options="$configure_options --with-sodium-dir=$libsodium_path --with-sodium"
     fi
   fi
 
