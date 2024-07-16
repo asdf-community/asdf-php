@@ -343,6 +343,8 @@ os_based_configure_options() {
     local jpeg_path=$(locate libjpeg.so | awk '{ print length(), $0 | "sort -n" }' | cut -d" " -f2- | head -n 1)
     local libpng_path=$(locate libpng.so | awk '{ print length(), $0 | "sort -n" }' | cut -d" " -f2- | head -n 1)
     local libgmp_path=$(locate libgmp.so | awk '{ print length(), $0 | "sort -n" }' | cut -d" " -f2- | head -n 1)
+    local libsodium_path=$(locate libsodium.so | awk '{ print length(), $0 | "sort -n" }' | cut -d" " -f2- | head -n 1)
+
     configure_options="--with-openssl --with-curl --with-zlib --with-readline --with-gettext"
 
     if [ "$jpeg_path" = "" ]; then
@@ -361,6 +363,12 @@ os_based_configure_options() {
       export ASDF_PKG_MISSING="$ASDF_PKG_MISSING libgmp"
     else
       configure_options="$configure_options --with-gmp-dir=$libgmp_path --with-gmp"
+    fi
+
+    if [ "$libsodium_path" = "" ]; then
+      export ASDF_PKG_MISSING="$ASDF_PKG_MISSING libsodium"
+    else
+      configure_options="$configure_options --with-sodium=$libsodium_path"
     fi
   fi
 
