@@ -10,7 +10,7 @@ sort_versions() {
 versions=$(
   git ls-remote --tags https://github.com/php/php-src.git |
     grep 'php-' |
-    awk '!/({})/ {print $2}' |
+    awk '!/\{.*\}/ {print $2}' |
     sed 's/refs\/tags\/php-//' |
     sort_versions |
     xargs
