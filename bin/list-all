@@ -12,6 +12,7 @@ versions=$(
     grep 'php-' |
     awk '!/({})/ {print $2}' |
     sed 's/refs\/tags\/php-//' |
+    grep -E -v -i "rc|alpha|beta|dev|pre" |
     sort_versions |
     xargs
 )
