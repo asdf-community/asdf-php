@@ -33,7 +33,7 @@ pecl install redis
 pecl install imagick
 
 echo "extension=redis.so
-extension=imagick.so" > $(asdf where php)/conf.d/php.ini
+extension=imagick.so" >> $(asdf where php)/conf.d/php.ini
 ```
 
 #### macOS
