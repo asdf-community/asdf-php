@@ -5,6 +5,8 @@
 _Original version of this plugin created by
 [@Stratus3D](https://github.com/Stratus3D)_
 
+### This repository forked from [asdf-php community](https://github.com/asdf-community/asdf-php) repository due to unmaintained plugin. 
+
 ## Build History
 
 [![Build history](https://buildstats.info/github/chart/asdf-community/asdf-php?branch=master)](https://github.com/asdf-community/asdf-php/actions)
