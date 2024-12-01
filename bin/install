@@ -214,9 +214,13 @@ homebrew_package_path() {
 
 exit_if_homebrew_not_installed() {
   if [ "$(brew --version 2>/dev/null)" = "" ]; then
-    echo "ERROR: Please install homebrew for OSX"
-    exit 1
+    echo "homebrew is not intalled, installing..."
+    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
   fi
+}
+
+install_dependencies_osx() {
+  brew install bison icu4c krb5 libedit libxml2 libpq bzip2 freetype gettext libiconv jpeg libpng libzip readline webp zlib gmp libsodium libiconv gmp imagemagick autoconf re2c pkg-config gd openssl@1.1
 }
 
 os_based_configure_options() {
@@ -226,6 +230,10 @@ os_based_configure_options() {
   if [[ $operating_system =~ "Darwin" ]]; then
 
     exit_if_homebrew_not_installed
+
+    echo "gathering compile dependencies..."
+
+    install_dependencies_osx
 
     local bison_path=$(homebrew_package_path bison)
     local bzip2_path=$(homebrew_package_path bzip2)
