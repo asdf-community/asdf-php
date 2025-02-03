@@ -16,7 +16,22 @@ install_php() {
   echo "Determining configuration options..."
   local source_path=$(get_download_file_path $install_type $version $tmp_download_dir)
   local configure_options="$(construct_configure_options $install_path)"
-  local make_flags="-j$ASDF_CONCURRENCY"
+
+  # Use a local variable for concurrency calculation
+  local_concurrency="${ASDF_CONCURRENCY}"
+  # If ASDF_CONCURRENCY is "auto" or not set, determine the number of CPU cores
+  if [[ "${local_concurrency:-auto}" == "auto" || -z "${local_concurrency}" ]]; then
+    if command -v nproc >/dev/null 2>&1; then
+      local_concurrency=$(nproc)
+    elif [[ "$(uname)" == "Darwin" ]]; then
+      local_concurrency=$(sysctl -n hw.ncpu)
+    else
+      local_concurrency=1 # Fallback if detection fails
+    fi
+  fi
+
+  # Now use the local_concurrency for make
+  make_flags="-j${local_concurrency}"
 
   local operating_system=$(uname -a)
 
