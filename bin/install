@@ -15,7 +15,7 @@ install_php() {
 
   echo "Determining configuration options..."
   local source_path=$(get_download_file_path $install_type $version $tmp_download_dir)
-  local configure_options="$(construct_configure_options $install_path)"
+  local configure_options="$(construct_configure_options $install_path $version)"
   local make_flags="-j$ASDF_CONCURRENCY"
 
   local operating_system=$(uname -a)
@@ -111,6 +111,7 @@ install_composer() {
 
 construct_configure_options() {
   local install_path=$1
+  local version=$2
 
   # many options included below are not applicable to newer PHP versions
   # including these will trigger a build warning, but will not b
@@ -149,6 +150,7 @@ construct_configure_options() {
     --with-mysqli=mysqlnd \
     --with-pdo-mysql=mysqlnd \
     --with-xmlrpc \
+    --with-xsl \
     --with-zip \
     --with-zlib \
     --without-snmp"
@@ -191,6 +193,12 @@ construct_configure_options() {
     configure_options="$configure_options --without-pcre-jit"
   fi
 
+  version_builtin_opcache="5.5.0"
+
+  if [ $(echo "$version,$version_builtin_opcache" | tr "," "\n" | sort -V -r | head -1) = "$version" ]; then
+    configure_options="$configure_options --with-opcache"
+  fi
+
   echo "$configure_options"
 }
 
@@ -206,9 +214,13 @@ homebrew_package_path() {
 
 exit_if_homebrew_not_installed() {
   if [ "$(brew --version 2>/dev/null)" = "" ]; then
-    echo "ERROR: Please install homebrew for OSX"
-    exit 1
+    echo "homebrew is not intalled, installing..."
+    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
   fi
+}
+
+install_dependencies_osx() {
+  brew install bison icu4c krb5 libedit libxml2 libpq bzip2 freetype gettext libiconv jpeg libpng libzip readline webp zlib gmp libsodium libiconv gmp imagemagick autoconf re2c pkg-config gd openssl@1.1
 }
 
 os_based_configure_options() {
@@ -218,6 +230,10 @@ os_based_configure_options() {
   if [[ $operating_system =~ "Darwin" ]]; then
 
     exit_if_homebrew_not_installed
+
+    echo "gathering compile dependencies..."
+
+    install_dependencies_osx
 
     local bison_path=$(homebrew_package_path bison)
     local bzip2_path=$(homebrew_package_path bzip2)
@@ -342,6 +358,8 @@ os_based_configure_options() {
   else
     local jpeg_path=$(locate libjpeg.so | awk '{ print length(), $0 | "sort -n" }' | cut -d" " -f2- | head -n 1)
     local libpng_path=$(locate libpng.so | awk '{ print length(), $0 | "sort -n" }' | cut -d" " -f2- | head -n 1)
+    local libgmp_path=$(dirname $(locate libgmp.so | awk '{ print length(), $0 | "sort -n" }' | cut -d" " -f2- | head -n 1))
+    local libsodium_path=$(dirname $(locate libsodium.so | awk '{ print length(), $0 | "sort -n" }' | cut -d" " -f2- | head -n 1))
     configure_options="--with-openssl --with-curl --with-zlib --with-readline --with-gettext"
 
     if [ "$jpeg_path" = "" ]; then
@@ -354,6 +372,18 @@ os_based_configure_options() {
       export ASDF_PKG_MISSING="$ASDF_PKG_MISSING libpng"
     else
       configure_options="$configure_options --with-png-dir=$libpng_path --with-png"
+    fi
+
+    if [ "$libgmp_path" = "" ]; then
+      export ASDF_PKG_MISSING="$ASDF_PKG_MISSING gmp"
+    else
+      configure_options="$configure_options --with-gmp"
+    fi
+
+    if [ "$libsodium_path" = "" ]; then
+      export ASDF_PKG_MISSING="$ASDF_PKG_MISSING sodium"
+    else
+      configure_options="$configure_options --with-sodium"
     fi
   fi
 
