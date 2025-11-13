@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 
+# Set so that direnv and strict_env = true doesn't complain about unbound variable
+COMPOSER_HOME=${COMPOSER_HOME:-}
+
 # Set Composer's home directory if it's not set.
 if [ "$ASDF_INSTALL_VERSION" != "system" ]; then
   if [ -z "$COMPOSER_HOME" ]; then
