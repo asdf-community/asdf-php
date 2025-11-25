@@ -20,8 +20,32 @@ for us to support them.
 
 ## Installation
 
+After installing [asdf](https://asdf-vm.com/guide/getting-started.html), install the plugin by running:
+
 ```bash
 asdf plugin add php https://github.com/asdf-community/asdf-php.git
+```
+
+or update an existing installation:
+
+```bash
+asdf plugin update php
+```
+
+Then use `asdf-php` to manage php:
+
+```bash
+# Show all installable versions
+asdf list all php
+
+# Install specific version
+asdf install php 8.5.0
+
+# or install latest tagged version with
+asdf install php latest
+
+# Set a version globally (on your ~/.tool-versions file)
+asdf set --home php latest
 ```
 
 ## Note
