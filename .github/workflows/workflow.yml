@@ -68,7 +68,16 @@ jobs:
         uses: actions/checkout@v5
 
       - name: Install shfmt
-        run: brew install shfmt
+        run: |
+          SUDO=""
+          if command -v sudo >/dev/null 2>&1; then
+            SUDO="sudo"
+          fi
+          $SUDO apt-get update && $SUDO apt-get install -y curl make git
+          SHFMT_VERSION=3.8.0
+          curl -sSL "https://github.com/mvdan/sh/releases/download/v${SHFMT_VERSION}/shfmt_v${SHFMT_VERSION}_linux_amd64" -o shfmt
+          chmod +x shfmt
+          $SUDO mv shfmt /usr/local/bin/
 
       - name: Run shfmt
         run: make fmt-check
