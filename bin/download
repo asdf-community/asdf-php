@@ -29,10 +29,26 @@ download_source() {
   curl -Lo $download_path $download_url
 }
 
+resolve_version() {
+  local version=$1
+
+  # If version is "latest", resolve it to the actual latest version
+  if [ "$version" = "latest" ]; then
+    local script_dir=$(dirname "$0")
+    local resolved_version=$("$script_dir/latest-stable" latest)
+    echo "$resolved_version"
+  else
+    echo "$version"
+  fi
+}
+
 main() {
   local install_type=$ASDF_INSTALL_TYPE
   local version=$ASDF_INSTALL_VERSION
   local download_path=$ASDF_DOWNLOAD_PATH
+
+  # Resolve "latest" to actual version number
+  version=$(resolve_version "$version")
 
   local php_version=$(get_php_version $version)
   local archive_path="${download_path}/php-${php_version}.tar.gz"
