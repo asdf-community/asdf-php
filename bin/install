@@ -6,15 +6,9 @@ install_php() {
   local install_type=$1
   local version=$2
   local install_path=$3
-
-  if [ "$TMPDIR" = "" ]; then
-    local tmp_download_dir=$(mktemp -d)
-  else
-    local tmp_download_dir=${TMPDIR%/}
-  fi
+  local download_path=$4
 
   echo "Determining configuration options..."
-  local source_path=$(get_download_file_path $install_type $version $tmp_download_dir)
   local configure_options="$(construct_configure_options $install_path)"
   local make_flags="-j$ASDF_CONCURRENCY"
 
@@ -67,17 +61,11 @@ install_php() {
     fi
   fi
 
-  echo "Downloading source code..."
-  download_source $install_type $version $source_path
-
   # Running this in a subshell because we don't to disturb the current
   # working directory.
   (
-    echo "Extracting source code..."
-    cd $(dirname $source_path)
-    tar -zxf $source_path || exit 1
-
-    cd $(untar_path $install_type $version $tmp_download_dir)
+    echo "Building from source..."
+    cd "$download_path"
 
     # Target is OS-specific
     # target=$(get_target)
@@ -409,5 +397,5 @@ get_php_version() {
   fi
 }
 
-install_php "$ASDF_INSTALL_TYPE" "$ASDF_INSTALL_VERSION" "$ASDF_INSTALL_PATH"
+install_php "$ASDF_INSTALL_TYPE" "$ASDF_INSTALL_VERSION" "$ASDF_INSTALL_PATH" "$ASDF_DOWNLOAD_PATH"
 install_composer "$ASDF_INSTALL_PATH"

@@ -1,0 +1,56 @@
+#!/usr/bin/env bash
+
+set -eo pipefail
+
+get_download_url() {
+  local install_type=$1
+  local version=$2
+
+  echo "https://github.com/php/php-src/archive/php-${version}.tar.gz"
+}
+
+get_php_version() {
+  IFS='-' read -a version_info <<<"$1"
+
+  if [ "${#version_info[@]}" -eq 1 ]; then
+    echo "${version_info[0]}"
+  else
+    echo "${version_info[0]}-${version_info[1]}"
+  fi
+}
+
+download_source() {
+  local install_type=$1
+  local version=$2
+  local download_path=$3
+  local download_url=$(get_download_url $install_type $version)
+
+  echo "Downloading PHP source from ${download_url}..."
+  curl -Lo $download_path $download_url
+}
+
+main() {
+  local install_type=$ASDF_INSTALL_TYPE
+  local version=$ASDF_INSTALL_VERSION
+  local download_path=$ASDF_DOWNLOAD_PATH
+
+  local php_version=$(get_php_version $version)
+  local archive_path="${download_path}/php-${php_version}.tar.gz"
+
+  # Create download directory if it doesn't exist
+  mkdir -p "$download_path"
+
+  # Download the source
+  download_source "$install_type" "$version" "$archive_path"
+
+  # Extract the source
+  echo "Extracting source code..."
+  tar -xzf "$archive_path" -C "$download_path" --strip-components=1
+
+  # Remove the archive to save space
+  rm "$archive_path"
+
+  echo "Download completed successfully"
+}
+
+main
