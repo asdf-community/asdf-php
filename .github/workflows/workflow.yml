@@ -46,6 +46,8 @@ jobs:
         with:
           command: php --version
           version: ${{ matrix.php-version }}
+          giturl: ${{ github.server_url }}/${{ github.repository }}
+          gitref: ${{ github.sha }}
 
   plugin-test-vm:
     strategy:
