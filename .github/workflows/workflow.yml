@@ -46,8 +46,8 @@ jobs:
         with:
           command: php --version
           version: ${{ matrix.php-version }}
-          giturl: ${{ github.server_url }}/${{ github.repository }}
-          gitref: ${{ github.sha }}
+          giturl: ${{ github.event.pull_request.head.repo.clone_url || format('{0}/{1}', github.server_url, github.repository) }}
+          gitref: ${{ github.event.pull_request.head.sha || github.sha }}
 
   plugin-test-vm:
     strategy:
