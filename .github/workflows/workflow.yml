@@ -10,12 +10,13 @@ jobs:
   plugin-test-docker:
     strategy:
       matrix:
-        container:
-          - ubuntu:latest
-        php-version:
-          - 7.4.14
-          - 8.0.0
-          - latest
+        include:
+          - php-version: 7.4.14
+            container: ubuntu:20.04
+          - php-version: 8.0.0
+            container: ubuntu:20.04
+          - php-version: latest
+            container: ubuntu:latest
 
     env:
       DEBIAN_FRONTEND: noninteractive
@@ -27,7 +28,15 @@ jobs:
 
     steps:
       - name: Install packages
-        run: apt-get update && apt-get install -y nodejs autoconf bison build-essential curl gettext git libgd-dev libcurl4-openssl-dev libedit-dev libicu-dev libjpeg-dev libmysqlclient-dev libonig-dev libpng-dev libpq-dev libreadline-dev libsqlite3-dev libssl-dev libxml2-dev libzip-dev openssl pkg-config re2c zlib1g-dev
+        run: |
+          apt-get update
+          apt-get install -y ca-certificates curl gnupg
+          # Install Node.js 18.x from NodeSource
+          mkdir -p /etc/apt/keyrings
+          curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg
+          echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_18.x nodistro main" | tee /etc/apt/sources.list.d/nodesource.list
+          apt-get update
+          apt-get install -y nodejs autoconf bison build-essential curl gettext git libgd-dev libcurl4-openssl-dev libedit-dev libicu-dev libjpeg-dev libmysqlclient-dev libonig-dev libpng-dev libpq-dev libreadline-dev libsqlite3-dev libssl-dev libxml2-dev libzip-dev openssl pkg-config re2c zlib1g-dev
 
       - name: Checkout code
         uses: actions/checkout@v5
