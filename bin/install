@@ -271,7 +271,7 @@ os_based_configure_options() {
       export ASDF_PKG_MISSING="freetype"
     fi
 
-    if [ -n "$bison_path" ]; then
+    if [ -z "$bison_path" ]; then
       export ASDF_PKG_MISSING="$ASDF_PKG_MISSING bison"
     fi
 
