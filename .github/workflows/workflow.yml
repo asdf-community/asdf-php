@@ -39,6 +39,9 @@ jobs:
     runs-on: ${{ matrix.os.os }}
 
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
       - name: Install system packages on Ubuntu
         if: ${{ runner.os == 'Linux' }}
         run: |
