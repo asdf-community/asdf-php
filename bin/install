@@ -7,21 +7,28 @@ install_php() {
   local download_path=$2
 
   echo "Determining configuration options..."
-  local source_path=$(get_download_file_path $install_type $version $tmp_download_dir)
-  local configure_options="$(construct_configure_options $install_path)"
+  local configure_options
+  configure_options="$(construct_configure_options "$install_path")"
   local make_flags="-j$ASDF_CONCURRENCY"
 
-  local operating_system=$(uname -a)
+  local operating_system
+  operating_system=$(uname -a)
 
   if [[ $operating_system =~ "Darwin" ]]; then
     exit_if_homebrew_not_installed
 
-    local bison_path=$(homebrew_package_path bison)
-    local icu4c_path=$(homebrew_package_path icu4c)
-    local krb5_path=$(homebrew_package_path krb5)
-    local libedit_path=$(homebrew_package_path libedit)
-    local libxml2_path=$(homebrew_package_path libxml2)
-    local openssl_path=$(homebrew_package_path openssl@1.1)
+    local bison_path
+    bison_path=$(homebrew_package_path bison)
+    local icu4c_path
+    icu4c_path=$(homebrew_package_path icu4c)
+    local krb5_path
+    krb5_path=$(homebrew_package_path krb5)
+    local libedit_path
+    libedit_path=$(homebrew_package_path libedit)
+    local libxml2_path
+    libxml2_path=$(homebrew_package_path libxml2)
+    local openssl_path
+    openssl_path=$(homebrew_package_path openssl@1.1)
 
     if [ -n "$bison_path" ]; then
       export "PATH=${bison_path}/bin:${PATH}"
@@ -60,17 +67,11 @@ install_php() {
     fi
   fi
 
-  echo "Downloading source code..."
-  download_source $install_type $version $source_path
-
   # Running this in a subshell because we don't to disturb the current
   # working directory.
   (
-    echo "Extracting source code..."
-    cd $(dirname $source_path)
-    tar -zxf $source_path || exit 1
-
-    cd $(untar_path $install_type $version $tmp_download_dir)
+    echo "Building from source..."
+    cd "$download_path"
 
     # Target is OS-specific
     # target=$(get_target)
@@ -79,6 +80,7 @@ install_php() {
     echo "Running buildconfig..."
     ./buildconf --force || exit 1
     echo "Running ./configure $configure_options"
+    # shellcheck disable=SC2086
     ./configure $configure_options || exit 1
     echo "Running make \"$make_flags\""
     make "$make_flags" || exit 1
@@ -88,18 +90,19 @@ install_php() {
   )
 
   # it's not obvious where php.ini should be placed, let us make it easy for the user
-  mkdir -p $install_path/conf.d/
-  echo "# add system-wide php configuration options here" >$install_path/conf.d/php.ini
+  mkdir -p "$install_path/conf.d/"
+  echo "# add system-wide php configuration options here" >"$install_path/conf.d/php.ini"
 }
 
 install_composer() {
   local bin_path=$1/bin
-  local expected_signature="$(curl -sL https://composer.github.io/installer.sig)"
+  local expected_signature
+  expected_signature="$(curl -sL https://composer.github.io/installer.sig)"
 
-  $bin_path/php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
-  $bin_path/php -r "if (hash_file('sha384', 'composer-setup.php') === '${expected_signature}') { echo 'Installer verified'; } else { echo 'Installer corrupt'; unlink('composer-setup.php'); } echo PHP_EOL;"
-  $bin_path/php composer-setup.php --install-dir=$bin_path --filename=composer
-  $bin_path/php -r "unlink('composer-setup.php');"
+  "$bin_path/php" -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
+  "$bin_path/php" -r "if (hash_file('sha384', 'composer-setup.php') === '${expected_signature}') { echo 'Installer verified'; } else { echo 'Installer corrupt'; unlink('composer-setup.php'); } echo PHP_EOL;"
+  "$bin_path/php" composer-setup.php --install-dir="$bin_path" --filename=composer
+  "$bin_path/php" -r "unlink('composer-setup.php');"
 }
 
 construct_configure_options() {
@@ -146,10 +149,11 @@ construct_configure_options() {
     --with-zlib \
     --without-snmp"
 
+  local configure_options
   if [ "$PHP_CONFIGURE_OPTIONS" = "" ]; then
-    local configure_options="$(os_based_configure_options) $global_config"
+    configure_options="$(os_based_configure_options) $global_config"
   else
-    local configure_options="$PHP_CONFIGURE_OPTIONS $global_config"
+    configure_options="$PHP_CONFIGURE_OPTIONS $global_config"
   fi
 
   if [ "${PHP_WITHOUT_PEAR:-no}" != "no" ]; then
@@ -158,15 +162,15 @@ construct_configure_options() {
     configure_options="$configure_options --with-pear"
   fi
 
-  if [ "${PHP_WITHOUT_PDO_PGSQL:-no}" != "no" ]; then
-    configure_options="$configure_options"
-  else
-    local operating_system=$(uname -a)
+  if [ "${PHP_WITHOUT_PDO_PGSQL:-no}" = "no" ]; then
+    local operating_system
+    operating_system=$(uname -a)
 
     if [[ $operating_system =~ "Darwin" ]]; then
       exit_if_homebrew_not_installed
 
-      local libpq_path=$(homebrew_package_path libpq)
+      local libpq_path
+      libpq_path=$(homebrew_package_path libpq)
 
       if [ -n "$libpq_path" ]; then
         configure_options="$configure_options --with-pdo-pgsql=$libpq_path"
@@ -178,9 +182,7 @@ construct_configure_options() {
     fi
   fi
 
-  if [ "${PHP_WITHOUT_PCRE_JIT:-no}" != "no" ]; then
-    configure_options="$configure_options"
-  else
+  if [ "${PHP_WITHOUT_PCRE_JIT:-no}" = "no" ]; then
     configure_options="$configure_options --without-pcre-jit"
   fi
 
@@ -190,10 +192,10 @@ construct_configure_options() {
 homebrew_package_path() {
   local package_name=$1
 
-  if [ "$(brew ls --versions $package_name)" = "" ]; then
+  if [ "$(brew ls --versions "$package_name")" = "" ]; then
     echo ""
   else
-    echo "$(brew --prefix $package_name)"
+    brew --prefix "$package_name"
   fi
 }
 
@@ -205,33 +207,51 @@ exit_if_homebrew_not_installed() {
 }
 
 os_based_configure_options() {
-  local operating_system=$(uname -a)
+  local operating_system
+  operating_system=$(uname -a)
   local configure_options=""
 
   if [[ $operating_system =~ "Darwin" ]]; then
 
     exit_if_homebrew_not_installed
 
-    local bison_path=$(homebrew_package_path bison)
-    local bzip2_path=$(homebrew_package_path bzip2)
-    local freetype_path=$(homebrew_package_path freetype)
-    local gettext_path=$(homebrew_package_path gettext)
-    local iconv_path=$(homebrew_package_path libiconv)
-    local icu4c_path=$(homebrew_package_path icu4c)
-    local jpeg_path=$(homebrew_package_path jpeg)
-    local libedit_path=$(homebrew_package_path libedit)
-    local libpng_path=$(homebrew_package_path libpng)
-    local libxml2_path=$(homebrew_package_path libxml2)
-    local libzip_path=$(homebrew_package_path libzip)
-    local openssl_path=$(homebrew_package_path openssl@1.1)
-    local readline_path=$(homebrew_package_path readline)
-    local webp_path=$(homebrew_package_path webp)
-    local zlib_path=$(homebrew_package_path zlib)
+    local bison_path
+    bison_path=$(homebrew_package_path bison)
+    local bzip2_path
+    bzip2_path=$(homebrew_package_path bzip2)
+    local freetype_path
+    freetype_path=$(homebrew_package_path freetype)
+    local gettext_path
+    gettext_path=$(homebrew_package_path gettext)
+    local iconv_path
+    iconv_path=$(homebrew_package_path libiconv)
+    local icu4c_path
+    icu4c_path=$(homebrew_package_path icu4c)
+    local jpeg_path
+    jpeg_path=$(homebrew_package_path jpeg)
+    local libedit_path
+    libedit_path=$(homebrew_package_path libedit)
+    local libpng_path
+    libpng_path=$(homebrew_package_path libpng)
+    local libxml2_path
+    libxml2_path=$(homebrew_package_path libxml2)
+    local libzip_path
+    libzip_path=$(homebrew_package_path libzip)
+    local openssl_path
+    openssl_path=$(homebrew_package_path openssl@1.1)
+    local readline_path
+    readline_path=$(homebrew_package_path readline)
+    local webp_path
+    webp_path=$(homebrew_package_path webp)
+    local zlib_path
+    zlib_path=$(homebrew_package_path zlib)
 
     # optional
     # if these packages exist they are included in the php compilation
-    local gmp_path=$(homebrew_package_path gmp)
-    local sodium_path=$(homebrew_package_path libsodium)
+    local gmp_path
+    gmp_path=$(homebrew_package_path gmp)
+    local sodium_path
+    sodium_path=$(homebrew_package_path libsodium)
 
     if [ -n "$gmp_path" ]; then
       configure_options="--with-gmp=$gmp_path"
@@ -333,8 +353,10 @@ os_based_configure_options() {
       export ASDF_PKG_MISSING="$ASDF_PKG_MISSING libiconv"
     fi
   else
-    local jpeg_path=$(locate libjpeg.so | awk '{ print length(), $0 | "sort -n" }' | cut -d" " -f2- | head -n 1)
-    local libpng_path=$(locate libpng.so | awk '{ print length(), $0 | "sort -n" }' | cut -d" " -f2- | head -n 1)
+    local jpeg_path
+    jpeg_path=$(locate libjpeg.so | awk '{ print length(), $0 | "sort -n" }' | cut -d" " -f2- | head -n 1)
+    local libpng_path
+    libpng_path=$(locate libpng.so | awk '{ print length(), $0 | "sort -n" }' | cut -d" " -f2- | head -n 1)
     configure_options="--with-openssl --with-curl --with-zlib --with-readline --with-gettext"
 
     if [ "$jpeg_path" = "" ]; then
@@ -350,7 +372,7 @@ os_based_configure_options() {
     fi
   fi
 
-  echo $configure_options
+  echo "$configure_options"
 }
 
 install_php "$ASDF_INSTALL_PATH" "$ASDF_DOWNLOAD_PATH"
