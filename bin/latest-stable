@@ -23,9 +23,20 @@ versions=$(
 # Get the latest version from the sorted list
 latest_version=$(echo "$versions" | tail -n 1)
 
-# If a query version is provided (e.g., "8.4"), filter to that major.minor
+# If a query version is provided (e.g., "8.4" or "8.4.0"), filter to that major.minor
 if [ $# -eq 1 ] && [ -n "$1" ]; then
   query="$1"
+
+  # If "latest" is requested, just return the latest version
+  if [ "$query" = "latest" ]; then
+    echo "$latest_version"
+    exit 0
+  fi
+
+  # If full version provided (e.g., 8.0.0), extract just major.minor (e.g., 8.0)
+  if [[ $query =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+    query=$(echo "$query" | cut -d. -f1-2)
+  fi
   # Extract matching versions for the given major.minor
   filtered_versions=$(echo "$versions" | grep -E "^${query}\." || echo "")
 
