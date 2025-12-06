@@ -83,12 +83,23 @@ install_php() {
     # shellcheck disable=SC2086
     ./configure $configure_options || exit 1
 
-    # Set CFLAGS to suppress OpenSSL 3.0 deprecation errors for older PHP versions
-    echo "Running make \"$make_flags\" with -Wno-error=deprecated-declarations"
-    CFLAGS="-Wno-error=deprecated-declarations" make "$make_flags" || exit 1
+    # Patch Makefile to suppress OpenSSL 3.0 deprecation errors for older PHP versions
+    echo "Patching Makefile to add -Wno-error=deprecated-declarations..."
+    if [ -f Makefile ]; then
+      # Add the flag to CFLAGS in Makefile
+      sed -i.bak 's/^\(CFLAGS = .*\)$/\1 -Wno-error=deprecated-declarations/' Makefile
+      # Also add to CFLAGS_CLEAN if it exists
+      sed -i 's/^\(CFLAGS_CLEAN = .*\)$/\1 -Wno-error=deprecated-declarations/' Makefile
+      echo "Makefile patched successfully"
+    else
+      echo "Warning: Makefile not found"
+    fi
+
+    echo "Running make \"$make_flags\""
+    make "$make_flags" || exit 1
     echo "Running make install..."
     # make "$make_flags" test || exit 1
-    CFLAGS="-Wno-error=deprecated-declarations" make "$make_flags" install || exit 1
+    make "$make_flags" install || exit 1
   )
 
   # it's not obvious where php.ini should be placed, let us make it easy for the user
