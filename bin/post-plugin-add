@@ -1,0 +1,53 @@
+#!/usr/bin/env bash
+set -eo pipefail
+
+# This hook is called after the plugin is added to asdf
+# We use it to ensure php-build submodule is properly initialized
+
+PLUGIN_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+PHP_BUILD_DIR="$PLUGIN_DIR/vendor/php-build"
+
+echo "Initializing php-build..."
+
+# Check if vendor/php-build already exists and has content
+if [ -f "$PHP_BUILD_DIR/bin/php-build" ]; then
+  echo "✓ php-build already initialized"
+  exit 0
+fi
+
+# Create vendor directory if it doesn't exist
+mkdir -p "$PLUGIN_DIR/vendor"
+
+# Try to initialize submodule if we're in a git repository
+if [ -d "$PLUGIN_DIR/.git" ] || [ -f "$PLUGIN_DIR/.git" ]; then
+  echo "Initializing php-build submodule..."
+  (
+    cd "$PLUGIN_DIR"
+    if git submodule update --init --recursive vendor/php-build 2>/dev/null; then
+      echo "✓ php-build submodule initialized"
+      exit 0
+    else
+      echo "⚠ Submodule initialization failed, trying direct clone..."
+    fi
+  )
+fi
+
+# Fallback: clone php-build directly
+if [ ! -f "$PHP_BUILD_DIR/bin/php-build" ]; then
+  echo "Cloning php-build from GitHub..."
+  if git clone --depth 1 https://github.com/php-build/php-build.git "$PHP_BUILD_DIR"; then
+    echo "✓ php-build cloned successfully"
+  else
+    echo "✗ Failed to clone php-build"
+    echo ""
+    echo "Please manually clone php-build:"
+    echo "  git clone https://github.com/php-build/php-build.git $PHP_BUILD_DIR"
+    exit 1
+  fi
+fi
+
+echo ""
+echo "✓ asdf-php plugin setup complete!"
+echo ""
+echo "You can now install PHP versions with:"
+echo "  asdf install php <version>"

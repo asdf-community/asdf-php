@@ -6,3 +6,59 @@ if [ "$ASDF_INSTALL_VERSION" != "system" ]; then
     export COMPOSER_HOME=$ASDF_INSTALL_PATH/.composer
   fi
 fi
+
+# Automatically set LD_LIBRARY_PATH for PHP versions that need OpenSSL 1.1
+check_and_set_openssl_path() {
+  local php_version="$ASDF_INSTALL_VERSION"
+
+  # Skip for system version
+  if [ "$php_version" = "system" ]; then
+    return 0
+  fi
+
+  # Extract version components
+  local php_major=$(echo "$php_version" | cut -d. -f1)
+  local php_minor=$(echo "$php_version" | cut -d. -f2)
+  local php_patch=$(echo "$php_version" | cut -d. -f3 | sed 's/[^0-9].*//')
+
+  # Determine if this PHP version needs OpenSSL 1.1
+  local needs_openssl1=false
+
+  if [ "$php_major" -eq 7 ]; then
+    needs_openssl1=true
+  elif [ "$php_major" -eq 8 ] && [ "$php_minor" -eq 0 ]; then
+    if [ "$php_patch" -lt 20 ]; then
+      needs_openssl1=true
+    fi
+  elif [ "$php_major" -eq 8 ] && [ "$php_minor" -eq 1 ]; then
+    if [ "$php_patch" -lt 6 ]; then
+      needs_openssl1=true
+    fi
+  fi
+
+  if [ "$needs_openssl1" != true ]; then
+    return 0
+  fi
+
+  # Try to find OpenSSL 1.1 installation
+  local openssl11_paths=(
+    "$HOME/.local/openssl-1.1"
+    "/usr/local/openssl-1.1"
+    "/usr/local/openssl@1.1"
+    "/usr/local/opt/openssl@1.1"
+    "/opt/openssl-1.1"
+    "/usr/lib64/openssl11"
+  )
+
+  for path in "${openssl11_paths[@]}"; do
+    if [ -d "$path/lib" ]; then
+      # Add to LD_LIBRARY_PATH if not already present
+      if [[ ":$LD_LIBRARY_PATH:" != *":$path/lib:"* ]]; then
+        export LD_LIBRARY_PATH="$path/lib:${LD_LIBRARY_PATH}"
+      fi
+      break
+    fi
+  done
+}
+
+check_and_set_openssl_path
