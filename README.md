@@ -72,6 +72,37 @@ brew install gmp libsodium imagemagick
 
 Note that the supported extension are not exhaustive, so you may need edit the `bin/install` script to support additional extension. Feel free to submit a PR for any missing extensions.
 
+#### Linux
+
+To install PHP on Linux, you'll need to install build dependencies with development headers:
+
+* autoconf
+* re2c
+* libxml2
+* sqlite
+* libcurl
+* gd
+* oniguruma
+* libpq
+* readline
+* libzip
+
+##### Fedora
+
+Run this command to install required packages:
+
+```sh
+sudo dnf install autoconf re2c libxml2 libxml2-devel sqlite sqlite-devel libcurl libcurl-devel gd gd-devel oniguruma oniguruma-devel libpq libpq-devel readline readline-devel libzip libzip-devel
+```
+
+##### Debian
+
+Run this command to install required packages:
+
+```sh
+sudo apt install autoconf pkg-config gcc bison re2c libxml2-dev libssl-dev sqlite3 libsqlite3-dev zlib1g-dev libcurl4-openssl-dev libgd-dev build-essential libonig-dev libpq-dev libreadline-dev libzip-dev
+```
+
 #### PHP-PEAR
 
 If PHP PEAR is down you can install PHP without PEAR. Specify `PHP_WITHOUT_PEAR` variable with any value
