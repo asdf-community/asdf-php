@@ -57,16 +57,16 @@ jobs:
         if: ${{ runner.os == 'macOS' }}
         run: brew install autoconf automake bison freetype gd gettext icu4c krb5 libedit libiconv libjpeg libpng libxml2 libzip openssl@1.1 openssl@3 pkg-config re2c zlib
 
-      - name: Test PHP installation
+      - name: Setup and test PHP
         timeout-minutes: 30
         shell: bash
         run: |
           set -euo pipefail
 
-          # Initialize submodule
+          echo "Initializing submodule..."
           git submodule update --init --recursive
 
-          # Set executable permissions
+          echo "Setting permissions..."
           chmod +x bin/* lib/*
 
           # Install asdf
