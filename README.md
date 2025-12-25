@@ -21,7 +21,7 @@ for us to support them.
 ## Installation
 
 ```bash
-asdf plugin add php https://github.com/asdf-community/asdf-php.git
+asdf plugin-add php https://github.com/asdf-community/asdf-php.git
 ```
 
 ## Note
