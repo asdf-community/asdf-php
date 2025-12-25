@@ -57,42 +57,40 @@ jobs:
         if: ${{ runner.os == 'macOS' }}
         run: brew install autoconf automake bison freetype gd gettext icu4c krb5 libedit libiconv libjpeg libpng libxml2 libzip openssl@1.1 openssl@3 pkg-config re2c zlib
 
-      - name: Initialize submodule
-        run: |
-          git submodule update --init --recursive
-
-      - name: Set executable permissions
-        run: |
-          chmod +x bin/*
-
-      - name: Install asdf
-        run: |
-          git clone https://github.com/asdf-vm/asdf.git ~/.asdf --branch v0.14.0
-          echo '. $HOME/.asdf/asdf.sh' >> ~/.bashrc
-          echo '. $HOME/.asdf/completions/asdf.bash' >> ~/.bashrc
-          source ~/.bashrc || true
-
-      - name: Add plugin
-        run: |
-          export PATH="$HOME/.asdf/bin:$PATH"
-          . $HOME/.asdf/asdf.sh
-          asdf plugin add php $GITHUB_WORKSPACE
-
-      - name: Test plugin installation
+      - name: Test PHP installation
         timeout-minutes: 30
         run: |
+          # Initialize submodule
+          git submodule update --init --recursive
+
+          # Set executable permissions
+          chmod +x bin/*
+
+          # Install asdf
+          git clone https://github.com/asdf-vm/asdf.git ~/.asdf --branch v0.14.0
+
+          # Setup environment
           export PATH="$HOME/.asdf/bin:$PATH"
           . $HOME/.asdf/asdf.sh
+
+          # Add plugin
+          asdf plugin add php $GITHUB_WORKSPACE
+
+          # Install PHP
           echo "Installing PHP ${{ matrix.os.version }}..."
           VERBOSE=y asdf install php ${{ matrix.os.version }}
+
+          # Set global version and test
           echo "Setting global PHP version..."
           asdf global php ${{ matrix.os.version }}
-          echo "Refreshing asdf shims..."
           asdf reshim php
+
           echo "Testing PHP installation..."
           php --version
+
           echo "Testing Composer..."
           composer --version || echo "Composer not available"
+
           echo "Installation successful!"
         env:
           ASDF_PHP_OPENSSL_AUTO: yes
