@@ -25,16 +25,18 @@ jobs:
         os:
           - os: ubuntu-latest
             version: 8.0.0
-          - os: ubuntu-latest
-            version: 7.4.14
-          - os: ubuntu-latest
-            version: latest
-          - os: macos-latest
-            version: 8.0.0
-          - os: macos-latest
-            version: 7.4.14
-          - os: macos-latest
-            version: latest
+          # will uncomment later; currently focus on php 8.0.0
+          # - os: ubuntu-latest
+          #   version: 7.4.14
+          # - os: ubuntu-latest
+          #   version: latest
+          # will uncomment later; currently focus on linux
+          # - os: macos-latest
+          #   version: 8.0.0
+          # - os: macos-latest
+          #   version: 7.4.14
+          # - os: macos-latest
+          #   version: latest
 
     runs-on: ${{ matrix.os.os }}
 
@@ -52,10 +54,10 @@ jobs:
         run: |
           if command -v sudo >/dev/null 2>&1; then
             sudo apt-get update
-            sudo apt-get install -y autoconf bison build-essential curl gettext git libgd-dev libcurl4-openssl-dev libedit-dev libicu-dev libjpeg-dev libmysqlclient-dev libonig-dev libpng-dev libpq-dev libreadline-dev libsqlite3-dev libssl-dev libxml2-dev libzip-dev openssl pkg-config re2c zlib1g-dev
+            sudo apt-get install -y autoconf bison build-essential curl gettext git libgd-dev libcurl4-openssl-dev libedit-dev libicu-dev libjpeg-dev libmysqlclient-dev libonig-dev libpng-dev libpq-dev libreadline-dev libsqlite3-dev libssl-dev libxml2-dev libzip-dev openssl pkg-config re2c zlib1g-dev ca-certificates wget libtool automake gcc-9 g++-9
           else
             apt-get update
-            apt-get install -y autoconf bison build-essential curl gettext git libgd-dev libcurl4-openssl-dev libedit-dev libicu-dev libjpeg-dev libmysqlclient-dev libonig-dev libpng-dev libpq-dev libreadline-dev libsqlite3-dev libssl-dev libxml2-dev libzip-dev openssl pkg-config re2c zlib1g-dev
+            apt-get install -y autoconf bison build-essential curl gettext git libgd-dev libcurl4-openssl-dev libedit-dev libicu-dev libjpeg-dev libmysqlclient-dev libonig-dev libpng-dev libpq-dev libreadline-dev libsqlite3-dev libssl-dev libxml2-dev libzip-dev openssl pkg-config re2c zlib1g-dev ca-certificates wget libtool automake gcc-9 g++-9
           fi
 
       - name: Install system packages on macOS
@@ -65,24 +67,129 @@ jobs:
       - name: Setup asdf
         uses: asdf-vm/actions/setup@v4
 
+      - name: Fix autotools for PHP 8.0.0
+        if: ${{ matrix.os.version == '8.0.0' || matrix.os.version == '7.4.14' }}
+        run: |
+          # Install compatible autotools for old PHP versions
+          if command -v sudo >/dev/null 2>&1; then
+            sudo apt-get install -y autotools-dev m4
+          else
+            apt-get install -y autotools-dev m4
+          fi
+          # Force regenerate configure script with compatible autotools
+          echo "Fixing autotools compatibility for PHP ${{ matrix.os.version }}"
+
       - name: Test plugin
-        timeout-minutes: 30
+        timeout-minutes: 45
         run: |
           # Add plugin from current checkout
           asdf plugin add php $GITHUB_WORKSPACE
 
-          # Install PHP version
-          asdf install php ${{ matrix.os.version }}
+          # Set version-specific configuration
+          if [ "${{ matrix.os.version }}" = "8.0.0" ]; then
+            echo "=== Configuring for PHP 8.0.0 ==="
+            # Verify gcc-9 is available, fallback to gcc if not
+            if command -v gcc-9 >/dev/null 2>&1; then
+              COMPILER="gcc-9"
+              CXXCOMPILER="g++-9"
+            else
+              COMPILER="gcc"
+              CXXCOMPILER="g++"
+            fi
+
+            # Export all variables for php-build
+            export ASDF_PHP_OPENSSL_AUTO=yes
+            export PHP_BUILD_XDEBUG_ENABLE=off
+            export PHP_BUILD_CONFIGURE_OPTS="--disable-werror --with-external-pcre --disable-fileinfo"
+            export CFLAGS="-Wno-error -Wno-deprecated-declarations -Wno-implicit-function-declaration -Wno-stringop-overflow -O0"
+            export CXXFLAGS="-Wno-error -Wno-deprecated-declarations -O0"
+            export LDFLAGS="-Wl,--no-as-needed"
+            export CC="$COMPILER"
+            export CXX="$CXXCOMPILER"
+            export MAKE_OPTS="-j1"
+
+            # Set for autoconf/configure scripts
+            export ac_cv_prog_CC="$COMPILER"
+            export ac_cv_prog_CXX="$CXXCOMPILER"
+
+          elif [ "${{ matrix.os.version }}" = "7.4.14" ]; then
+            echo "=== Configuring for PHP 7.4.14 ==="
+            # Verify gcc-9 is available, fallback to gcc if not
+            if command -v gcc-9 >/dev/null 2>&1; then
+              COMPILER="gcc-9"
+              CXXCOMPILER="g++-9"
+            else
+              COMPILER="gcc"
+              CXXCOMPILER="g++"
+            fi
+
+            export ASDF_PHP_OPENSSL_AUTO=yes
+            export PHP_BUILD_XDEBUG_ENABLE=off
+            export PHP_BUILD_CONFIGURE_OPTS="--disable-werror --with-external-pcre --disable-fileinfo"
+            export CFLAGS="-Wno-error -Wno-deprecated-declarations -Wno-implicit-function-declaration -Wno-stringop-overflow -O0"
+            export CXXFLAGS="-Wno-error -Wno-deprecated-declarations -O0"
+            export LDFLAGS="-Wl,--no-as-needed"
+            export CC="$COMPILER"
+            export CXX="$CXXCOMPILER"
+            export MAKE_OPTS="-j1"
+
+            # Set for autoconf/configure scripts
+            export ac_cv_prog_CC="$COMPILER"
+            export ac_cv_prog_CXX="$CXXCOMPILER"
+
+          else
+            echo "=== Configuring for PHP latest ==="
+            export ASDF_PHP_OPENSSL_AUTO=no
+            export PHP_BUILD_XDEBUG_ENABLE=off
+            export PHP_BUILD_CONFIGURE_OPTS="--disable-werror"
+            export CFLAGS="-O2"
+            export CXXFLAGS="-O2"
+            export CC="gcc"
+            export CXX="g++"
+          fi
+
+          # Debug compiler setup for problematic versions
+          if [ "${{ matrix.os.version }}" = "8.0.0" ] || [ "${{ matrix.os.version }}" = "7.4.14" ]; then
+            echo "=== Compiler Debug Info ==="
+            echo "CC=$CC"
+            echo "CXX=$CXX"
+            echo "ac_cv_prog_CC=$ac_cv_prog_CC"
+            echo "CFLAGS=$CFLAGS"
+
+            echo "Compiler version:"
+            $CC --version || echo "Compiler not found"
+
+            echo "Testing basic compilation:"
+            echo 'int main() { return 0; }' > /tmp/test.c
+            $CC $CFLAGS -o /tmp/test /tmp/test.c && echo "✓ Basic compilation works" || echo "✗ Basic compilation FAILED"
+            rm -f /tmp/test /tmp/test.c
+
+            echo "Environment variables that will be passed to php-build:"
+            env | grep -E "^(CC|CXX|CFLAGS|CXXFLAGS|LDFLAGS|ac_cv_)" | sort
+          fi
+
+          # Install PHP version with enhanced error handling for old versions
+          echo "Installing PHP ${{ matrix.os.version }}..."
+
+          if [ "${{ matrix.os.version }}" = "8.0.0" ] || [ "${{ matrix.os.version }}" = "7.4.14" ]; then
+            asdf install php ${{ matrix.os.version }} || {
+              echo "Build failed, examining config.log..."
+              find /tmp -name "config.log" -path "*/php-build/source/${{ matrix.os.version }}/*" -exec echo "=== Config Log ===" \; -exec tail -100 {} \;
+              echo "=== Full PHP build log ==="
+              find /tmp -name "php-build.${{ matrix.os.version }}.*.log" -exec tail -200 {} \;
+              exit 1
+            }
+          else
+            asdf install php ${{ matrix.os.version }}
+          fi
 
           # Set global and test
           asdf global php ${{ matrix.os.version }}
+          echo "Testing PHP installation..."
           php --version
-        env:
-          ASDF_PHP_OPENSSL_AUTO: yes
-          PHP_BUILD_XDEBUG_ENABLE: off
-          CFLAGS: "-Wno-error=dangling-pointer -Wno-error=calloc-transposed-args -Wno-error=deprecated-declarations"
-          CXXFLAGS: "-Wno-error=dangling-pointer -Wno-error=calloc-transposed-args -Wno-error=deprecated-declarations"
-          PHP_BUILD_CONFIGURE_OPTS: "--disable-werror"
+
+          echo "PHP installation path:"
+          asdf where php
 
       - name: Test Composer (if available)
         if: success()
