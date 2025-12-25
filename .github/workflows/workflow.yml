@@ -42,6 +42,11 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Initialize submodule and set permissions
+        run: |
+          git submodule update --init --recursive
+          chmod +x bin/* lib/*
+
       - name: Install system packages on Ubuntu
         if: ${{ runner.os == 'Linux' }}
         run: |
@@ -57,51 +62,23 @@ jobs:
         if: ${{ runner.os == 'macOS' }}
         run: brew install autoconf automake bison freetype gd gettext icu4c krb5 libedit libiconv libjpeg libpng libxml2 libzip openssl@1.1 openssl@3 pkg-config re2c zlib
 
-      - name: Setup and test PHP
-        timeout-minutes: 30
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          echo "Initializing submodule..."
-          git submodule update --init --recursive
-
-          echo "Setting permissions..."
-          chmod +x bin/* lib/*
-
-          # Install asdf
-          git clone https://github.com/asdf-vm/asdf.git ~/.asdf --branch v0.18.0
-
-          # Setup asdf in current shell
-          export PATH="$HOME/.asdf/bin:$HOME/.asdf/shims:$PATH"
-          source $HOME/.asdf/asdf.sh
-
-          # Add plugin
-          echo "Adding PHP plugin..."
-          asdf plugin add php $GITHUB_WORKSPACE
-
-          # Install PHP
-          echo "Installing PHP ${{ matrix.os.version }}..."
-          asdf install php ${{ matrix.os.version }}
-
-          # Set global version and test
-          echo "Setting global PHP version..."
-          asdf global php ${{ matrix.os.version }}
-          asdf reshim php
-
-          echo "Testing PHP installation..."
-          php --version
-
-          echo "Testing Composer..."
-          composer --version || echo "Composer not available"
-
-          echo "Installation successful!"
+      - name: Test plugin
+        uses: asdf-vm/actions/plugin-test@v4
+        with:
+          command: php --version
+          version: ${{ matrix.os.version }}
         env:
           ASDF_PHP_OPENSSL_AUTO: yes
           PHP_BUILD_XDEBUG_ENABLE: off
           CFLAGS: "-Wno-error=dangling-pointer -Wno-error=calloc-transposed-args -Wno-error=deprecated-declarations"
           CXXFLAGS: "-Wno-error=dangling-pointer -Wno-error=calloc-transposed-args -Wno-error=deprecated-declarations"
           PHP_BUILD_CONFIGURE_OPTS: "--disable-werror"
+
+      - name: Test Composer (if available)
+        if: success()
+        run: |
+          composer --version || echo "Composer not available"
+        continue-on-error: true
 
   lint:
     runs-on: ubuntu-latest
@@ -110,16 +87,18 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Setup asdf
+        uses: asdf-vm/actions/setup@v4
+
+      - name: Install development tools
+        uses: asdf-vm/actions/install@v4
+        with:
+          tool_versions: |
+            shellcheck 0.9.0
+            make latest
+
       - name: Run ShellCheck
-        run: |
-          if command -v sudo >/dev/null 2>&1; then
-            sudo apt-get update
-            sudo apt-get install -y shellcheck make git
-          else
-            apt-get update
-            apt-get install -y shellcheck make git
-          fi
-          make lint
+        run: make lint
 
   format:
     runs-on: ubuntu-latest
@@ -128,22 +107,15 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Install shfmt
-        run: |
-          if command -v sudo >/dev/null 2>&1; then
-            sudo apt-get update
-            sudo apt-get install -y curl ca-certificates make git
-          else
-            apt-get update
-            apt-get install -y curl ca-certificates make git
-          fi
-          curl -L "https://github.com/mvdan/sh/releases/download/v3.12.0/shfmt_v3.12.0_linux_amd64" -o shfmt
-          chmod +x shfmt
-          if command -v sudo >/dev/null 2>&1; then
-            sudo mv shfmt /usr/local/bin/
-          else
-            mv shfmt /usr/local/bin/
-          fi
+      - name: Setup asdf
+        uses: asdf-vm/actions/setup@v4
+
+      - name: Install development tools
+        uses: asdf-vm/actions/install@v4
+        with:
+          tool_versions: |
+            shfmt 3.8.0
+            make latest
 
       - name: Run shfmt
         run: make fmt-check
