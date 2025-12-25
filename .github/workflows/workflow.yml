@@ -2,73 +2,108 @@ name: Main workflow
 
 on:
   pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+    paths-ignore:
+      - "**.md"
   push:
+    branches:
+      - master
+      - main
+    paths-ignore:
+      - "**.md"
   schedule:
     - cron: 0 0 * * 5
 
 jobs:
-  plugin-test-docker:
+  plugin_test:
     strategy:
+      fail-fast: false
       matrix:
-        container:
-          - ubuntu:latest
-        php-version:
-          - 7.4.14
-          - 8.0.0
-          - latest
+        os:
+          - os: ubuntu-latest
+            version: 8.0.0
+          - os: ubuntu-latest
+            version: 7.4.14
+          - os: ubuntu-latest
+            version: latest
+          - os: macos-latest
+            version: 8.0.0
+          - os: macos-latest
+            version: 7.4.14
+          - os: macos-latest
+            version: latest
 
-    env:
-      DEBIAN_FRONTEND: noninteractive
+    runs-on: ${{ matrix.os.os }}
 
-    container:
-      image: ${{ matrix.container }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
 
+      - name: Install system packages on Ubuntu
+        if: ${{ runner.os == 'Linux' }}
+        run: |
+          if command -v sudo >/dev/null 2>&1; then
+            sudo apt-get update
+            sudo apt-get install -y autoconf bison build-essential curl gettext git libgd-dev libcurl4-openssl-dev libedit-dev libicu-dev libjpeg-dev libmysqlclient-dev libonig-dev libpng-dev libpq-dev libreadline-dev libsqlite3-dev libssl-dev libxml2-dev libzip-dev openssl pkg-config re2c zlib1g-dev
+          else
+            apt-get update
+            apt-get install -y autoconf bison build-essential curl gettext git libgd-dev libcurl4-openssl-dev libedit-dev libicu-dev libjpeg-dev libmysqlclient-dev libonig-dev libpng-dev libpq-dev libreadline-dev libsqlite3-dev libssl-dev libxml2-dev libzip-dev openssl pkg-config re2c zlib1g-dev
+          fi
+
+      - name: Install system packages on macOS
+        if: ${{ runner.os == 'macOS' }}
+        run: brew install autoconf automake bison freetype gd gettext icu4c krb5 libedit libiconv libjpeg libpng libxml2 libzip openssl@1.1 openssl@3 pkg-config re2c zlib
+
+      - name: Test plugin
+        uses: asdf-vm/actions/plugin-test@v4
+        with:
+          command: php --version
+          version: ${{ matrix.os.version }}
+
+  lint:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Install packages
-        run: apt-get update && apt-get install -y autoconf bison build-essential curl gettext git libgd-dev libcurl4-openssl-dev libedit-dev libicu-dev libjpeg-dev libmysqlclient-dev libonig-dev libpng-dev libpq-dev libreadline-dev libsqlite3-dev libssl-dev libxml2-dev libzip-dev openssl pkg-config re2c zlib1g-dev
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-      - name: asdf_plugin_test
-        uses: asdf-vm/actions/plugin-test@v4
-        with:
-          command: php --version
-          version: ${{ matrix.php-version }}
-
-  plugin-test-vm:
-    strategy:
-      matrix:
-        os:
-          - macos-latest
-        php-version:
-          - 7.4.14
-          - 8.0.0
-          - latest
-
-    runs-on: ${{ matrix.os }}
-
-    steps:
-      - name: Install packages
-        run: brew install autoconf automake bison freetype gd gettext icu4c krb5 libedit libiconv libjpeg libpng libxml2 libzip openssl@1.1 pkg-config re2c zlib
-
-      - name: Install conflicting packages
-        run: brew install openssl@3
-
-      - name: asdf_plugin_test
-        uses: asdf-vm/actions/plugin-test@v4
-        with:
-          command: php --version
-          version: ${{ matrix.php-version }}
+      - name: Run ShellCheck
+        run: |
+          if command -v sudo >/dev/null 2>&1; then
+            sudo apt-get update
+            sudo apt-get install -y shellcheck make git
+          else
+            apt-get update
+            apt-get install -y shellcheck make git
+          fi
+          make lint
 
   format:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v4
 
       - name: Install shfmt
-        run: brew install shfmt
+        run: |
+          if command -v sudo >/dev/null 2>&1; then
+            sudo apt-get update
+            sudo apt-get install -y curl ca-certificates make git
+          else
+            apt-get update
+            apt-get install -y curl ca-certificates make git
+          fi
+          curl -L "https://github.com/mvdan/sh/releases/download/v3.12.0/shfmt_v3.12.0_linux_amd64" -o shfmt
+          chmod +x shfmt
+          if command -v sudo >/dev/null 2>&1; then
+            sudo mv shfmt /usr/local/bin/
+          else
+            mv shfmt /usr/local/bin/
+          fi
 
       - name: Run shfmt
         run: make fmt-check
