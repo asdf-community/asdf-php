@@ -144,8 +144,15 @@ check_openssl_compatibility() {
     echo "php-build's OpenSSL 3 patch is incomplete for PHP ${php_version}."
     echo "OpenSSL 1.1 is required to build this PHP version."
     echo ""
-    read -p "Install OpenSSL 1.1 automatically? [y/N] " -n 1 -r
-    echo
+
+    # Auto-install in CI environments or if ASDF_PHP_OPENSSL_AUTO is set
+    if [ "${CI:-false}" = "true" ] || [ "${GITHUB_ACTIONS:-false}" = "true" ] || [ "${ASDF_PHP_OPENSSL_AUTO:-no}" != "no" ]; then
+      echo "Auto-installing OpenSSL 1.1 (CI environment detected)..."
+      REPLY="y"
+    else
+      read -p "Install OpenSSL 1.1 automatically? [y/N] " -n 1 -r
+      echo
+    fi
 
     if [[ $REPLY =~ ^[Yy]$ ]]; then
       echo "Installing OpenSSL 1.1..."
@@ -293,13 +300,63 @@ fi
 # Install Composer globally (php-build doesn't do this by default)
 install_composer() {
   local bin_path="$install_path/bin"
+  local temp_dir
+  temp_dir=$(mktemp -d)
   local expected_signature
-  expected_signature=$(curl -sL https://composer.github.io/installer.sig)
+  expected_signature=$(curl -sL https://composer.github.io/installer.sig 2>/dev/null)
 
-  "$bin_path"/php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');" 2>/dev/null
-  "$bin_path"/php -r "if (hash_file('sha384', 'composer-setup.php') === '${expected_signature}') { echo 'OK'; } else { unlink('composer-setup.php'); exit(1); }" >/dev/null
-  "$bin_path"/php composer-setup.php --install-dir="$bin_path" --filename=composer --quiet
-  "$bin_path"/php -r "unlink('composer-setup.php');" 2>/dev/null
+  if [ -z "$expected_signature" ]; then
+    echo "⚠ Could not fetch Composer installer signature"
+    rm -rf "$temp_dir"
+    return 1
+  fi
+
+  (
+    cd "$temp_dir"
+    "$bin_path"/php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');" 2>/dev/null || {
+      echo "⚠ Could not download Composer installer"
+      cd - >/dev/null
+      rm -rf "$temp_dir"
+      return 1
+    }
+
+    if [ ! -f "composer-setup.php" ]; then
+      echo "⚠ Composer installer not found after download"
+      cd - >/dev/null
+      rm -rf "$temp_dir"
+      return 1
+    fi
+
+    signature_check=$("$bin_path"/php -r "if (hash_file('sha384', 'composer-setup.php') === '${expected_signature}') { echo 'OK'; } else { echo 'FAIL'; }" 2>/dev/null)
+
+    if [ "$signature_check" != "OK" ]; then
+      echo "⚠ Composer installer signature verification failed"
+      rm -f composer-setup.php
+      cd - >/dev/null
+      rm -rf "$temp_dir"
+      return 1
+    fi
+
+    "$bin_path"/php composer-setup.php --install-dir="$bin_path" --filename=composer --quiet 2>/dev/null || {
+      echo "⚠ Composer installation failed"
+      rm -f composer-setup.php
+      cd - >/dev/null
+      rm -rf "$temp_dir"
+      return 1
+    }
+
+    rm -f composer-setup.php
+  )
+
+  rm -rf "$temp_dir"
+
+  # Verify Composer was installed
+  if [ -f "$bin_path/composer" ] && [ -x "$bin_path/composer" ]; then
+    return 0
+  else
+    echo "⚠ Composer binary not found after installation"
+    return 1
+  fi
 }
 
 # Install Composer

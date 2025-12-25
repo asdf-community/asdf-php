@@ -46,6 +46,10 @@ if [ ! -f "$PHP_BUILD_DIR/bin/php-build" ]; then
   fi
 fi
 
+# Ensure all bin scripts have executable permissions
+echo "Setting executable permissions on bin scripts..."
+chmod +x "$PLUGIN_DIR"/bin/*
+
 echo ""
 echo "✓ asdf-php plugin setup complete!"
 echo ""
