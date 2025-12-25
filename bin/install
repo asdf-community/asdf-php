@@ -53,7 +53,7 @@ check_openssl_compatibility() {
   local php_version=$1
 
   # Get system OpenSSL version
-  if ! command -v openssl &> /dev/null; then
+  if ! command -v openssl &>/dev/null; then
     echo "⚠ Warning: OpenSSL not found in PATH"
     return 0
   fi
@@ -289,7 +289,7 @@ install_composer() {
   local expected_signature=$(curl -sL https://composer.github.io/installer.sig)
 
   $bin_path/php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');" 2>/dev/null
-  $bin_path/php -r "if (hash_file('sha384', 'composer-setup.php') === '${expected_signature}') { echo 'OK'; } else { unlink('composer-setup.php'); exit(1); }" > /dev/null
+  $bin_path/php -r "if (hash_file('sha384', 'composer-setup.php') === '${expected_signature}') { echo 'OK'; } else { unlink('composer-setup.php'); exit(1); }" >/dev/null
   $bin_path/php composer-setup.php --install-dir="$bin_path" --filename=composer --quiet
   $bin_path/php -r "unlink('composer-setup.php');" 2>/dev/null
 }
@@ -305,7 +305,7 @@ fi
 # Create conf.d directory for user configuration
 mkdir -p "$install_path/conf.d"
 if [ ! -f "$install_path/conf.d/php.ini" ]; then
-  echo "# Add custom PHP configuration here" > "$install_path/conf.d/php.ini"
+  echo "# Add custom PHP configuration here" >"$install_path/conf.d/php.ini"
 fi
 
 # Install Xdebug if requested
@@ -314,14 +314,14 @@ install_xdebug() {
   local pecl_path="$bin_path/pecl"
 
   echo "Installing Xdebug..."
-  if ! command -v "$pecl_path" &> /dev/null; then
+  if ! command -v "$pecl_path" &>/dev/null; then
     echo "⚠ PECL not found"
     return 1
   fi
 
-  if "$pecl_path" install xdebug > /dev/null 2>&1; then
-    echo "zend_extension=xdebug.so" >> "$install_path/conf.d/xdebug.ini"
-    echo "xdebug.mode=debug" >> "$install_path/conf.d/xdebug.ini"
+  if "$pecl_path" install xdebug >/dev/null 2>&1; then
+    echo "zend_extension=xdebug.so" >>"$install_path/conf.d/xdebug.ini"
+    echo "xdebug.mode=debug" >>"$install_path/conf.d/xdebug.ini"
     echo "✓ Xdebug installed"
   else
     echo "⚠ Xdebug installation failed"
