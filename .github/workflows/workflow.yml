@@ -87,15 +87,10 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup asdf
-        uses: asdf-vm/actions/setup@v4
-
-      - name: Install development tools
-        uses: asdf-vm/actions/install@v4
-        with:
-          tool_versions: |
-            shellcheck 0.9.0
-            make latest
+      - name: Install ShellCheck and make
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y shellcheck make
 
       - name: Run ShellCheck
         run: make lint
@@ -107,15 +102,13 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup asdf
-        uses: asdf-vm/actions/setup@v4
-
-      - name: Install development tools
-        uses: asdf-vm/actions/install@v4
-        with:
-          tool_versions: |
-            shfmt 3.8.0
-            make latest
+      - name: Install shfmt and make
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y make
+          curl -L "https://github.com/mvdan/sh/releases/download/v3.8.0/shfmt_v3.8.0_linux_amd64" -o shfmt
+          chmod +x shfmt
+          sudo mv shfmt /usr/local/bin/
 
       - name: Run shfmt
         run: make fmt-check
