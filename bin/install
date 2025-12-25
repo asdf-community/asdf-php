@@ -58,8 +58,10 @@ check_openssl_compatibility() {
     return 0
   fi
 
-  local openssl_full_version=$(openssl version 2>/dev/null | awk '{print $2}')
-  local openssl_major=$(echo "$openssl_full_version" | cut -d. -f1)
+  local openssl_full_version
+  openssl_full_version=$(openssl version 2>/dev/null | awk '{print $2}')
+  local openssl_major
+  openssl_major=$(echo "$openssl_full_version" | cut -d. -f1)
 
   # Only check if OpenSSL 3.x is detected
   if [ "$openssl_major" -lt 3 ]; then
@@ -67,22 +69,22 @@ check_openssl_compatibility() {
   fi
 
   # Extract PHP version components
-  local php_major=$(echo "$php_version" | cut -d. -f1)
-  local php_minor=$(echo "$php_version" | cut -d. -f2)
-  local php_patch=$(echo "$php_version" | cut -d. -f3 | sed 's/[^0-9].*//')
+  local php_major
+  php_major=$(echo "$php_version" | cut -d. -f1)
+  local php_minor
+  php_minor=$(echo "$php_version" | cut -d. -f2)
+  local php_patch
+  php_patch=$(echo "$php_version" | cut -d. -f3 | sed 's/[^0-9].*/')
 
   # Determine if this PHP version needs OpenSSL 1.1
   local needs_openssl1=false
-  local php_status=""
   local has_other_issues=false
 
   if [ "$php_major" -eq 7 ]; then
     needs_openssl1=true
-    php_status="PHP 7.x (End of Life)"
   elif [ "$php_major" -eq 8 ] && [ "$php_minor" -eq 0 ]; then
     if [ "$php_patch" -lt 20 ]; then
       needs_openssl1=true
-      php_status="PHP 8.0.0-8.0.19"
       # PHP 8.0.0-8.0.5 have additional compatibility issues
       if [ "$php_patch" -lt 6 ]; then
         has_other_issues=true
@@ -91,7 +93,6 @@ check_openssl_compatibility() {
   elif [ "$php_major" -eq 8 ] && [ "$php_minor" -eq 1 ]; then
     if [ "$php_patch" -lt 6 ]; then
       needs_openssl1=true
-      php_status="PHP 8.1.0-8.1.5"
     fi
   fi
 
@@ -128,7 +129,8 @@ check_openssl_compatibility() {
 
   if [ -n "$openssl11_path" ]; then
     # Found OpenSSL 1.1 - configure build to use it
-    local found_version=$(LD_LIBRARY_PATH="${openssl11_path}/lib:${LD_LIBRARY_PATH}" "$openssl11_path/bin/openssl" version 2>/dev/null | awk '{print $2}')
+    local found_version
+    found_version=$(LD_LIBRARY_PATH="${openssl11_path}/lib:${LD_LIBRARY_PATH}" "$openssl11_path/bin/openssl" version 2>/dev/null | awk '{print $2}')
     echo "✓ Using OpenSSL 1.1 (${found_version}) at ${openssl11_path}"
     export PKG_CONFIG_PATH="${openssl11_path}/lib/pkgconfig:${PKG_CONFIG_PATH}"
     export PHP_BUILD_CONFIGURE_OPTS="${PHP_BUILD_CONFIGURE_OPTS} --with-openssl=${openssl11_path}"
@@ -215,9 +217,12 @@ fi
 # Patch php-build definition files to include libxml2 compatibility
 patch_php_build_definitions() {
   local php_version=$1
-  local php_major=$(echo "$php_version" | cut -d. -f1)
-  local php_minor=$(echo "$php_version" | cut -d. -f2)
-  local php_patch=$(echo "$php_version" | cut -d. -f3 | sed 's/[^0-9].*//')
+  local php_major
+  php_major=$(echo "$php_version" | cut -d. -f1)
+  local php_minor
+  php_minor=$(echo "$php_version" | cut -d. -f2)
+  local php_patch
+  php_patch=$(echo "$php_version" | cut -d. -f3 | sed 's/[^0-9].*/')
   local php_build_patches="$PHP_BUILD_ROOT/share/php-build/patches"
   local definitions_dir="$PHP_BUILD_ROOT/share/php-build/definitions"
   local def_file="$definitions_dir/$php_version"
@@ -229,7 +234,8 @@ patch_php_build_definitions() {
       # Add after the last patch_file line, or before install_package if no patches exist
       if grep -q "patch_file" "$def_file"; then
         # Find the last patch_file line and add after it
-        local last_patch_line=$(grep -n "patch_file" "$def_file" | tail -1 | cut -d: -f1)
+        local last_patch_line
+        last_patch_line=$(grep -n "patch_file" "$def_file" | tail -1 | cut -d: -f1)
         sed -i "${last_patch_line}a patch_file \"php-7.4-libxml2-2.12.patch\"" "$def_file"
       else
         # Add before install_package
@@ -242,7 +248,8 @@ patch_php_build_definitions() {
     if [ -f "${PLUGIN_DIR}/patches/php-7.4-icu-74-compat.patch" ]; then
       cp "${PLUGIN_DIR}/patches/php-7.4-icu-74-compat.patch" "$php_build_patches/"
       if [ -f "$def_file" ] && ! grep -q "php-7.4-icu-74-compat.patch" "$def_file"; then
-        local last_patch_line=$(grep -n "patch_file" "$def_file" | tail -1 | cut -d: -f1)
+        local last_patch_line
+        last_patch_line=$(grep -n "patch_file" "$def_file" | tail -1 | cut -d: -f1)
         sed -i "${last_patch_line}a patch_file \"php-7.4-icu-74-compat.patch\"" "$def_file"
         echo "Added ICU 74+ compatibility patch to PHP $php_version definition"
       fi
@@ -286,12 +293,13 @@ fi
 # Install Composer globally (php-build doesn't do this by default)
 install_composer() {
   local bin_path="$install_path/bin"
-  local expected_signature=$(curl -sL https://composer.github.io/installer.sig)
+  local expected_signature
+  expected_signature=$(curl -sL https://composer.github.io/installer.sig)
 
-  $bin_path/php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');" 2>/dev/null
-  $bin_path/php -r "if (hash_file('sha384', 'composer-setup.php') === '${expected_signature}') { echo 'OK'; } else { unlink('composer-setup.php'); exit(1); }" >/dev/null
-  $bin_path/php composer-setup.php --install-dir="$bin_path" --filename=composer --quiet
-  $bin_path/php -r "unlink('composer-setup.php');" 2>/dev/null
+  "$bin_path"/php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');" 2>/dev/null
+  "$bin_path"/php -r "if (hash_file('sha384', 'composer-setup.php') === '${expected_signature}') { echo 'OK'; } else { unlink('composer-setup.php'); exit(1); }" >/dev/null
+  "$bin_path"/php composer-setup.php --install-dir="$bin_path" --filename=composer --quiet
+  "$bin_path"/php -r "unlink('composer-setup.php');" 2>/dev/null
 }
 
 # Install Composer
