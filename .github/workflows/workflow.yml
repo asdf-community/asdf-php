@@ -24,15 +24,15 @@ jobs:
       matrix:
         os:
           - os: ubuntu-latest
-            version: 8.0.30
+            version: 8.0.0
           - os: ubuntu-latest
-            version: 7.4.33
+            version: 7.4.14
           - os: ubuntu-latest
             version: latest
           - os: macos-latest
-            version: 8.0.30
+            version: 8.0.0
           - os: macos-latest
-            version: 7.4.33
+            version: 7.4.14
           - os: macos-latest
             version: latest
 
@@ -57,11 +57,26 @@ jobs:
         if: ${{ runner.os == 'macOS' }}
         run: brew install autoconf automake bison freetype gd gettext icu4c krb5 libedit libiconv libjpeg libpng libxml2 libzip openssl@1.1 openssl@3 pkg-config re2c zlib
 
-      - name: Test plugin
-        uses: asdf-vm/actions/plugin-test@v4
-        with:
-          command: php --version
-          version: ${{ matrix.os.version }}
+      - name: Initialize submodule
+        run: |
+          git submodule update --init --recursive
+
+      - name: Set executable permissions
+        run: |
+          chmod +x bin/*
+
+      - name: Setup asdf
+        uses: asdf-vm/actions/setup@v3
+
+      - name: Add plugin
+        run: |
+          asdf plugin add php $GITHUB_WORKSPACE
+
+      - name: Test plugin installation
+        run: |
+          asdf install php ${{ matrix.os.version }}
+          asdf global php ${{ matrix.os.version }}
+          php --version
         env:
           ASDF_PHP_OPENSSL_AUTO: yes
           PHP_BUILD_XDEBUG_ENABLE: off
