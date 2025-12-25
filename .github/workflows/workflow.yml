@@ -65,20 +65,30 @@ jobs:
         run: |
           chmod +x bin/*
 
-      - name: Setup asdf
-        uses: asdf-vm/actions/setup@v3
+      - name: Install asdf
+        run: |
+          git clone https://github.com/asdf-vm/asdf.git ~/.asdf --branch v0.14.0
+          echo '. $HOME/.asdf/asdf.sh' >> ~/.bashrc
+          echo '. $HOME/.asdf/completions/asdf.bash' >> ~/.bashrc
+          source ~/.bashrc || true
 
       - name: Add plugin
         run: |
+          export PATH="$HOME/.asdf/bin:$PATH"
+          . $HOME/.asdf/asdf.sh
           asdf plugin add php $GITHUB_WORKSPACE
 
       - name: Test plugin installation
         timeout-minutes: 30
         run: |
+          export PATH="$HOME/.asdf/bin:$PATH"
+          . $HOME/.asdf/asdf.sh
           echo "Installing PHP ${{ matrix.os.version }}..."
           VERBOSE=y asdf install php ${{ matrix.os.version }}
           echo "Setting global PHP version..."
           asdf global php ${{ matrix.os.version }}
+          echo "Refreshing asdf shims..."
+          asdf reshim php
           echo "Testing PHP installation..."
           php --version
           echo "Testing Composer..."
