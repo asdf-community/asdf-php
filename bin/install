@@ -74,7 +74,7 @@ check_openssl_compatibility() {
   local php_minor
   php_minor=$(echo "$php_version" | cut -d. -f2)
   local php_patch
-  php_patch=$(echo "$php_version" | cut -d. -f3 | sed 's/[^0-9].*/')
+  php_patch=$(echo "$php_version" | cut -d. -f3 | sed 's/[^0-9].*//')
 
   # Determine if this PHP version needs OpenSSL 1.1
   local needs_openssl1=false
@@ -222,7 +222,7 @@ patch_php_build_definitions() {
   local php_minor
   php_minor=$(echo "$php_version" | cut -d. -f2)
   local php_patch
-  php_patch=$(echo "$php_version" | cut -d. -f3 | sed 's/[^0-9].*/')
+  php_patch=$(echo "$php_version" | cut -d. -f3 | sed 's/[^0-9].*//')
   local php_build_patches="$PHP_BUILD_ROOT/share/php-build/patches"
   local definitions_dir="$PHP_BUILD_ROOT/share/php-build/definitions"
   local def_file="$definitions_dir/$php_version"
