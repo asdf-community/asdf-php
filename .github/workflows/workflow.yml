@@ -59,26 +59,30 @@ jobs:
 
       - name: Test PHP installation
         timeout-minutes: 30
+        shell: bash
         run: |
+          set -euo pipefail
+
           # Initialize submodule
           git submodule update --init --recursive
 
           # Set executable permissions
-          chmod +x bin/*
+          chmod +x bin/* lib/*
 
           # Install asdf
-          git clone https://github.com/asdf-vm/asdf.git ~/.asdf --branch v0.14.0
+          git clone https://github.com/asdf-vm/asdf.git ~/.asdf --branch v0.18.0
 
-          # Setup environment
-          export PATH="$HOME/.asdf/bin:$PATH"
-          . $HOME/.asdf/asdf.sh
+          # Setup asdf in current shell
+          export PATH="$HOME/.asdf/bin:$HOME/.asdf/shims:$PATH"
+          source $HOME/.asdf/asdf.sh
 
           # Add plugin
+          echo "Adding PHP plugin..."
           asdf plugin add php $GITHUB_WORKSPACE
 
           # Install PHP
           echo "Installing PHP ${{ matrix.os.version }}..."
-          VERBOSE=y asdf install php ${{ matrix.os.version }}
+          asdf install php ${{ matrix.os.version }}
 
           # Set global version and test
           echo "Setting global PHP version..."
