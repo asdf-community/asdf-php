@@ -67,6 +67,8 @@ jobs:
         with:
           command: php --version
           version: ${{ matrix.os.version }}
+          giturl: ${{ github.server_url }}/${{ github.repository }}
+          gitref: ${{ github.sha }}
         env:
           ASDF_PHP_OPENSSL_AUTO: yes
           PHP_BUILD_XDEBUG_ENABLE: off
