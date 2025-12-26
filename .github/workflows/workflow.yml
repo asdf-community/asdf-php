@@ -31,15 +31,24 @@ jobs:
           - os: ubuntu-latest
             version: 8.0.0
             is_legacy: true
-          # will uncomment later; currently focus on php 8.0.0
-          # - os: ubuntu-latest
-          #   version: 7.4.14
-          #   is_legacy: true
-          # - os: ubuntu-latest
-          #   version: latest
-          #   is_legacy: false
+          - os: ubuntu-latest
+            version: 8.3.29
+            is_legacy: true
+          - os: ubuntu-latest
+            version: 7.4.14
+            is_legacy: true
+          - os: ubuntu-latest
+            version: latest
+            is_legacy: false
+          - os: macos-latest
+            version: 8.3.29
+            is_legacy: false
+          # will uncomment later
           # - os: macos-latest
           #   version: 8.0.0
+          #   is_legacy: true
+          # - os: ubuntu-latest
+          #   version: 7.4.14
           #   is_legacy: true
 
     runs-on: ${{ matrix.os }}
