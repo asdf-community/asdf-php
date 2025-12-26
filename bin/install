@@ -197,7 +197,7 @@ setup_compiler_for_old_php() {
   php_patch=$(echo "$php_version" | cut -d. -f3 | sed 's/[^0-9].*//')
 
   # Only apply special compiler setup for problematic old versions
-  if ! ([ "$php_major" -eq 7 ] && [ "$php_minor" -eq 4 ]) && ! ([ "$php_major" -eq 8 ] && [ "$php_minor" -eq 0 ] && [ "$php_patch" -lt 20 ]); then
+  if ! { [ "$php_major" -eq 7 ] && [ "$php_minor" -eq 4 ]; } && ! { [ "$php_major" -eq 8 ] && [ "$php_minor" -eq 0 ] && [ "$php_patch" -lt 20 ]; }; then
     return 0
   fi
 
@@ -233,7 +233,7 @@ setup_compiler_for_old_php() {
   # Test basic compilation
   local test_c_file
   test_c_file=$(mktemp --suffix=.c)
-  echo 'int main() { return 0; }' > "$test_c_file"
+  echo 'int main() { return 0; }' >"$test_c_file"
 
   if "$target_cc" -o "${test_c_file%.c}" "$test_c_file" 2>/dev/null; then
     echo "✓ Compiler test successful"
@@ -371,7 +371,7 @@ validate_compiler_setup() {
   php_patch=$(echo "$php_version" | cut -d. -f3 | sed 's/[^0-9].*//')
 
   # Only validate for problematic versions
-  if ! ([ "$php_major" -eq 7 ] && [ "$php_minor" -eq 4 ]) && ! ([ "$php_major" -eq 8 ] && [ "$php_minor" -eq 0 ] && [ "$php_patch" -lt 20 ]); then
+  if ! { [ "$php_major" -eq 7 ] && [ "$php_minor" -eq 4 ]; } && ! { [ "$php_major" -eq 8 ] && [ "$php_minor" -eq 0 ] && [ "$php_patch" -lt 20 ]; }; then
     return 0
   fi
 
@@ -397,7 +397,7 @@ validate_compiler_setup() {
   # Test basic compilation to ensure compiler works
   local test_c_file
   test_c_file=$(mktemp --suffix=.c)
-  echo 'int main() { return 0; }' > "$test_c_file"
+  echo 'int main() { return 0; }' >"$test_c_file"
 
   if "$CC" -o "${test_c_file%.c}" "$test_c_file" 2>/dev/null; then
     echo "✓ Basic compilation test passed"
@@ -418,7 +418,7 @@ prepare_php_build_environment() {
   local wrapper_script
   wrapper_script=$(mktemp)
 
-  cat > "$wrapper_script" << 'EOF'
+  cat >"$wrapper_script" <<'EOF'
 #!/bin/bash
 set -eo pipefail
 
@@ -475,12 +475,12 @@ php_major=$(echo "$version" | cut -d. -f1)
 php_minor=$(echo "$version" | cut -d. -f2)
 php_patch=$(echo "$version" | cut -d. -f3 | sed 's/[^0-9].*//')
 
-if ([ "$php_major" -eq 7 ] && [ "$php_minor" -eq 4 ]) || ([ "$php_major" -eq 8 ] && [ "$php_minor" -eq 0 ] && [ "$php_patch" -lt 20 ]); then
+if { [ "$php_major" -eq 7 ] && [ "$php_minor" -eq 4 ]; } || { [ "$php_major" -eq 8 ] && [ "$php_minor" -eq 0 ] && [ "$php_patch" -lt 20 ]; }; then
   echo "Using environment wrapper for PHP ${version}..."
 
   # Force regenerate autotools cache before build
   export CONFIG_SHELL=/bin/bash
-  export AUTOCONF_CACHE_DIR=""  # Clear autoconf cache
+  export AUTOCONF_CACHE_DIR="" # Clear autoconf cache
 
   wrapper_script=$(prepare_php_build_environment "$version" "$install_path")
 
