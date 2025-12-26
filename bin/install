@@ -244,21 +244,21 @@ setup_compiler_for_old_php() {
     exit 1
   fi
 
-  # Set conservative build flags for old PHP versions
+  # Set conservative build flags for old PHP versions (only if not already set)
   if [ "$php_major" -eq 7 ] && [ "$php_minor" -eq 4 ]; then
     # PHP 7.4 specific flags
-    export CFLAGS="${CFLAGS:-} -Wno-error -Wno-deprecated-declarations -Wno-implicit-function-declaration -Wno-stringop-overflow -O0"
-    export CXXFLAGS="${CXXFLAGS:-} -Wno-error -Wno-deprecated-declarations -O0"
-    export LDFLAGS="${LDFLAGS:-} -Wl,--no-as-needed"
-    export PHP_BUILD_CONFIGURE_OPTS="${PHP_BUILD_CONFIGURE_OPTS} --disable-werror --with-external-pcre --disable-fileinfo"
-    export MAKE_OPTS="${MAKE_OPTS:-} -j1"
+    export CFLAGS="${CFLAGS:--Wno-error -Wno-deprecated-declarations -Wno-implicit-function-declaration -Wno-stringop-overflow -O0}"
+    export CXXFLAGS="${CXXFLAGS:--Wno-error -Wno-deprecated-declarations -O0}"
+    export LDFLAGS="${LDFLAGS:--Wl,--no-as-needed}"
+    export PHP_BUILD_CONFIGURE_OPTS="${PHP_BUILD_CONFIGURE_OPTS:---disable-werror --with-external-pcre --disable-fileinfo --without-tidy}"
+    export MAKE_OPTS="${MAKE_OPTS:--j1}"
   elif [ "$php_major" -eq 8 ] && [ "$php_minor" -eq 0 ] && [ "$php_patch" -lt 20 ]; then
     # PHP 8.0.0-8.0.19 specific flags
-    export CFLAGS="${CFLAGS:-} -Wno-error -Wno-deprecated-declarations -Wno-implicit-function-declaration -Wno-stringop-overflow -O0"
-    export CXXFLAGS="${CXXFLAGS:-} -Wno-error -Wno-deprecated-declarations -O0"
-    export LDFLAGS="${LDFLAGS:-} -Wl,--no-as-needed"
-    export PHP_BUILD_CONFIGURE_OPTS="${PHP_BUILD_CONFIGURE_OPTS} --disable-werror --with-external-pcre --disable-fileinfo"
-    export MAKE_OPTS="${MAKE_OPTS:-} -j1"
+    export CFLAGS="${CFLAGS:--Wno-error -Wno-deprecated-declarations -Wno-implicit-function-declaration -Wno-stringop-overflow -O0}"
+    export CXXFLAGS="${CXXFLAGS:--Wno-error -Wno-deprecated-declarations -O0}"
+    export LDFLAGS="${LDFLAGS:--Wl,--no-as-needed}"
+    export PHP_BUILD_CONFIGURE_OPTS="${PHP_BUILD_CONFIGURE_OPTS:---disable-werror --with-external-pcre --disable-fileinfo --without-tidy}"
+    export MAKE_OPTS="${MAKE_OPTS:--j1}"
   fi
 
   echo "Compiler configuration:"
