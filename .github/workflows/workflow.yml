@@ -72,12 +72,11 @@ jobs:
         run: |
           # Install compatible autotools for old PHP versions
           if command -v sudo >/dev/null 2>&1; then
-            sudo apt-get install -y autotools-dev m4
+            sudo apt-get install -y autotools-dev m4 libtool-bin
           else
-            apt-get install -y autotools-dev m4
+            apt-get install -y autotools-dev m4 libtool-bin
           fi
-          # Force regenerate configure script with compatible autotools
-          echo "Fixing autotools compatibility for PHP ${{ matrix.os.version }}"
+          echo "Autotools installed for PHP ${{ matrix.os.version }}"
 
       - name: Test plugin
         timeout-minutes: 45
@@ -112,6 +111,9 @@ jobs:
             export ac_cv_prog_CC="$COMPILER"
             export ac_cv_prog_CXX="$CXXCOMPILER"
 
+            # Set CONFIG_SHELL for consistent shell behavior
+            export CONFIG_SHELL="/bin/bash"
+
           elif [ "${{ matrix.os.version }}" = "7.4.14" ]; then
             echo "=== Configuring for PHP 7.4.14 ==="
             # Verify gcc-9 is available, fallback to gcc if not
@@ -136,6 +138,9 @@ jobs:
             # Set for autoconf/configure scripts
             export ac_cv_prog_CC="$COMPILER"
             export ac_cv_prog_CXX="$CXXCOMPILER"
+
+            # Set CONFIG_SHELL for consistent shell behavior
+            export CONFIG_SHELL="/bin/bash"
 
           else
             echo "=== Configuring for PHP latest ==="
@@ -173,8 +178,18 @@ jobs:
 
           if [ "${{ matrix.os.version }}" = "8.0.0" ] || [ "${{ matrix.os.version }}" = "7.4.14" ]; then
             asdf install php ${{ matrix.os.version }} || {
-              echo "Build failed, examining config.log..."
-              find /tmp -name "config.log" -path "*/php-build/source/${{ matrix.os.version }}/*" -exec echo "=== Config Log ===" \; -exec tail -100 {} \;
+              echo "Build failed, examining config.log and environment..."
+              echo "=== Final Environment Check ==="
+              echo "CC: $CC ($(which $CC 2>/dev/null || echo 'NOT FOUND'))"
+              echo "ac_cv_prog_CC: $ac_cv_prog_CC"
+              echo "CONFIG_SHELL: $CONFIG_SHELL"
+
+              echo "=== Config Log ==="
+              find /tmp -name "config.log" -path "*/php-build/source/${{ matrix.os.version }}/*" -exec tail -100 {} \;
+
+              echo "=== Configure Script Status ==="
+              find /tmp -path "*/php-build/source/${{ matrix.os.version }}/configure" -ls
+
               echo "=== Full PHP build log ==="
               find /tmp -name "php-build.${{ matrix.os.version }}.*.log" -exec tail -200 {} \;
               exit 1
