@@ -186,20 +186,93 @@ check_openssl_compatibility() {
 # Check compatibility before building
 check_openssl_compatibility "$version"
 
-# Add compiler flags for PHP 7.4 and early PHP 8.0 to handle modern compiler strictness
-php_major=$(echo "$version" | cut -d. -f1)
-php_minor=$(echo "$version" | cut -d. -f2)
-php_patch=$(echo "$version" | cut -d. -f3 | sed 's/[^0-9].*//')
+# Configure compiler for older PHP versions that need special handling
+setup_compiler_for_old_php() {
+  local php_version=$1
+  local php_major
+  php_major=$(echo "$php_version" | cut -d. -f1)
+  local php_minor
+  php_minor=$(echo "$php_version" | cut -d. -f2)
+  local php_patch
+  php_patch=$(echo "$php_version" | cut -d. -f3 | sed 's/[^0-9].*//')
 
-if [ "$php_major" -eq 7 ] && [ "$php_minor" -eq 4 ]; then
-  # Disable errors for shadowing and other warnings that fail on modern compilers
-  export CFLAGS="${CFLAGS:-} -Wno-error=shadow -Wno-error=implicit-function-declaration"
-  export PHP_BUILD_CONFIGURE_OPTS="${PHP_BUILD_CONFIGURE_OPTS} --disable-werror"
-elif [ "$php_major" -eq 8 ] && [ "$php_minor" -eq 0 ] && [ "$php_patch" -lt 20 ]; then
-  # PHP 8.0.0-8.0.19 have calloc-transposed-args and other warnings treated as errors
-  export CFLAGS="${CFLAGS:-} -Wno-error=calloc-transposed-args -Wno-error=deprecated-declarations"
-  export PHP_BUILD_CONFIGURE_OPTS="${PHP_BUILD_CONFIGURE_OPTS} --disable-werror"
-fi
+  # Only apply special compiler setup for problematic old versions
+  if ! ([ "$php_major" -eq 7 ] && [ "$php_minor" -eq 4 ]) && ! ([ "$php_major" -eq 8 ] && [ "$php_minor" -eq 0 ] && [ "$php_patch" -lt 20 ]); then
+    return 0
+  fi
+
+  echo "=== Configuring compiler for PHP ${php_version} ==="
+
+  # Try to use gcc-9 if available, otherwise fallback to system gcc
+  local target_cc="gcc"
+  local target_cxx="g++"
+
+  if command -v gcc-9 >/dev/null 2>&1 && command -v g++-9 >/dev/null 2>&1; then
+    target_cc="gcc-9"
+    target_cxx="g++-9"
+    echo "Using gcc-9/g++-9 for better compatibility"
+  else
+    echo "gcc-9 not available, using system gcc"
+  fi
+
+  # Set compiler environment variables
+  export CC="$target_cc"
+  export CXX="$target_cxx"
+
+  # Set autoconf cache variables to ensure configure script uses our chosen compiler
+  export ac_cv_prog_CC="$target_cc"
+  export ac_cv_prog_CXX="$target_cxx"
+
+  # Verify compiler works before proceeding
+  echo "Testing compiler functionality..."
+  if ! command -v "$target_cc" >/dev/null 2>&1; then
+    echo "✗ Compiler $target_cc not found"
+    exit 1
+  fi
+
+  # Test basic compilation
+  local test_c_file
+  test_c_file=$(mktemp --suffix=.c)
+  echo 'int main() { return 0; }' > "$test_c_file"
+
+  if "$target_cc" -o "${test_c_file%.c}" "$test_c_file" 2>/dev/null; then
+    echo "✓ Compiler test successful"
+    rm -f "$test_c_file" "${test_c_file%.c}"
+  else
+    echo "✗ Compiler test failed"
+    rm -f "$test_c_file" "${test_c_file%.c}"
+    exit 1
+  fi
+
+  # Set conservative build flags for old PHP versions
+  if [ "$php_major" -eq 7 ] && [ "$php_minor" -eq 4 ]; then
+    # PHP 7.4 specific flags
+    export CFLAGS="${CFLAGS:-} -Wno-error -Wno-deprecated-declarations -Wno-implicit-function-declaration -Wno-stringop-overflow -O0"
+    export CXXFLAGS="${CXXFLAGS:-} -Wno-error -Wno-deprecated-declarations -O0"
+    export LDFLAGS="${LDFLAGS:-} -Wl,--no-as-needed"
+    export PHP_BUILD_CONFIGURE_OPTS="${PHP_BUILD_CONFIGURE_OPTS} --disable-werror --with-external-pcre --disable-fileinfo"
+    export MAKE_OPTS="${MAKE_OPTS:-} -j1"
+  elif [ "$php_major" -eq 8 ] && [ "$php_minor" -eq 0 ] && [ "$php_patch" -lt 20 ]; then
+    # PHP 8.0.0-8.0.19 specific flags
+    export CFLAGS="${CFLAGS:-} -Wno-error -Wno-deprecated-declarations -Wno-implicit-function-declaration -Wno-stringop-overflow -O0"
+    export CXXFLAGS="${CXXFLAGS:-} -Wno-error -Wno-deprecated-declarations -O0"
+    export LDFLAGS="${LDFLAGS:-} -Wl,--no-as-needed"
+    export PHP_BUILD_CONFIGURE_OPTS="${PHP_BUILD_CONFIGURE_OPTS} --disable-werror --with-external-pcre --disable-fileinfo"
+    export MAKE_OPTS="${MAKE_OPTS:-} -j1"
+  fi
+
+  echo "Compiler configuration:"
+  echo "  CC=$CC"
+  echo "  CXX=$CXX"
+  echo "  ac_cv_prog_CC=$ac_cv_prog_CC"
+  echo "  CFLAGS=$CFLAGS"
+  echo "  CXXFLAGS=$CXXFLAGS"
+  echo "  LDFLAGS=$LDFLAGS"
+  echo "  MAKE_OPTS=$MAKE_OPTS"
+}
+
+# Apply compiler setup for problematic PHP versions
+setup_compiler_for_old_php "$version"
 
 # Disable Xdebug by default (prevents build failures)
 if [ -z "$PHP_BUILD_XDEBUG_ENABLE" ]; then
@@ -287,14 +360,147 @@ patch_php_build_definitions() {
 
 patch_php_build_definitions "$version"
 
+# Simple approach: ensure compiler variables are properly exported for configure
+validate_compiler_setup() {
+  local php_version=$1
+  local php_major
+  php_major=$(echo "$php_version" | cut -d. -f1)
+  local php_minor
+  php_minor=$(echo "$php_version" | cut -d. -f2)
+  local php_patch
+  php_patch=$(echo "$php_version" | cut -d. -f3 | sed 's/[^0-9].*//')
+
+  # Only validate for problematic versions
+  if ! ([ "$php_major" -eq 7 ] && [ "$php_minor" -eq 4 ]) && ! ([ "$php_major" -eq 8 ] && [ "$php_minor" -eq 0 ] && [ "$php_patch" -lt 20 ]); then
+    return 0
+  fi
+
+  echo "=== Validating Compiler Setup for PHP $php_version ==="
+
+  # Verify all required compiler variables are set
+  if [ -z "$CC" ] || [ -z "$CXX" ]; then
+    echo "✗ CC or CXX not set"
+    exit 1
+  fi
+
+  if ! command -v "$CC" >/dev/null 2>&1; then
+    echo "✗ Compiler $CC not found"
+    exit 1
+  fi
+
+  echo "✓ Compiler validation passed"
+  echo "  CC=$CC"
+  echo "  CXX=$CXX"
+  echo "  ac_cv_prog_CC=$ac_cv_prog_CC"
+  echo "  ac_cv_prog_CXX=$ac_cv_prog_CXX"
+
+  # Test basic compilation to ensure compiler works
+  local test_c_file
+  test_c_file=$(mktemp --suffix=.c)
+  echo 'int main() { return 0; }' > "$test_c_file"
+
+  if "$CC" -o "${test_c_file%.c}" "$test_c_file" 2>/dev/null; then
+    echo "✓ Basic compilation test passed"
+    rm -f "$test_c_file" "${test_c_file%.c}"
+  else
+    echo "✗ Basic compilation test failed"
+    rm -f "$test_c_file" "${test_c_file%.c}"
+    exit 1
+  fi
+}
+
+# Create environment validation and preparation wrapper for php-build
+prepare_php_build_environment() {
+  local php_version=$1
+  local install_path=$2
+
+  # Create a wrapper script that ensures environment variables are preserved
+  local wrapper_script
+  wrapper_script=$(mktemp)
+
+  cat > "$wrapper_script" << 'EOF'
+#!/bin/bash
+set -eo pipefail
+
+# Re-export all environment variables that php-build needs
+export CC="${CC}"
+export CXX="${CXX}"
+export CFLAGS="${CFLAGS}"
+export CXXFLAGS="${CXXFLAGS}"
+export LDFLAGS="${LDFLAGS}"
+export PKG_CONFIG_PATH="${PKG_CONFIG_PATH}"
+export PHP_BUILD_CONFIGURE_OPTS="${PHP_BUILD_CONFIGURE_OPTS}"
+export OPENSSL_CFLAGS="${OPENSSL_CFLAGS}"
+export OPENSSL_LIBS="${OPENSSL_LIBS}"
+export LD_LIBRARY_PATH="${LD_LIBRARY_PATH}"
+export MAKE_OPTS="${MAKE_OPTS}"
+export CONFIG_SHELL="${CONFIG_SHELL}"
+export AUTOCONF_CACHE_DIR="${AUTOCONF_CACHE_DIR}"
+
+# Set autoconf cache variables - these are critical for configure to find the compiler
+export ac_cv_prog_CC="${ac_cv_prog_CC}"
+export ac_cv_prog_CXX="${ac_cv_prog_CXX}"
+
+# Clear any existing autoconf cache that might interfere
+if [ -n "$AUTOCONF_CACHE_DIR" ]; then
+  rm -rf "$AUTOCONF_CACHE_DIR" 2>/dev/null || true
+fi
+
+# Debug output for troubleshooting
+echo "=== php-build Environment ==="
+echo "CC=$CC"
+echo "CXX=$CXX"
+echo "CFLAGS=$CFLAGS"
+echo "ac_cv_prog_CC=$ac_cv_prog_CC"
+echo "ac_cv_prog_CXX=$ac_cv_prog_CXX"
+echo "CONFIG_SHELL=$CONFIG_SHELL"
+echo "PHP_BUILD_CONFIGURE_OPTS=$PHP_BUILD_CONFIGURE_OPTS"
+echo "MAKE_OPTS=$MAKE_OPTS"
+
+# Run php-build with all environment preserved
+exec php-build "$@"
+EOF
+
+  chmod +x "$wrapper_script"
+  echo "$wrapper_script"
+}
+
 echo "Building PHP ${version}..."
 
-# Call php-build to do the heavy lifting
-if php-build "$version" "$install_path"; then
-  echo "✓ PHP ${version} built successfully"
+# Validate compiler setup for old PHP versions
+validate_compiler_setup "$version"
+
+# For problematic PHP versions, use environment wrapper
+php_major=$(echo "$version" | cut -d. -f1)
+php_minor=$(echo "$version" | cut -d. -f2)
+php_patch=$(echo "$version" | cut -d. -f3 | sed 's/[^0-9].*//')
+
+if ([ "$php_major" -eq 7 ] && [ "$php_minor" -eq 4 ]) || ([ "$php_major" -eq 8 ] && [ "$php_minor" -eq 0 ] && [ "$php_patch" -lt 20 ]); then
+  echo "Using environment wrapper for PHP ${version}..."
+
+  # Force regenerate autotools cache before build
+  export CONFIG_SHELL=/bin/bash
+  export AUTOCONF_CACHE_DIR=""  # Clear autoconf cache
+
+  wrapper_script=$(prepare_php_build_environment "$version" "$install_path")
+
+  # Call php-build through wrapper to preserve environment
+  if "$wrapper_script" "$version" "$install_path"; then
+    echo "✓ PHP ${version} built successfully"
+    rm -f "$wrapper_script"
+  else
+    echo "✗ Build failed. For OpenSSL issues: ${PLUGIN_DIR}/lib/install-openssl11.sh"
+    rm -f "$wrapper_script"
+    exit 1
+  fi
 else
-  echo "✗ Build failed. For OpenSSL issues: ${PLUGIN_DIR}/lib/install-openssl11.sh"
-  exit 1
+  # Call php-build normally for modern PHP versions
+  if php-build "$version" "$install_path"; then
+    echo "✓ PHP ${version} built successfully"
+  else
+    echo "✗ Build failed. For OpenSSL issues: ${PLUGIN_DIR}/lib/install-openssl11.sh"
+    exit 1
+  fi
 fi
 
 # Install Composer globally (php-build doesn't do this by default)
