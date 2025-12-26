@@ -54,10 +54,10 @@ jobs:
         run: |
           if command -v sudo >/dev/null 2>&1; then
             sudo apt-get update
-            sudo apt-get install -y autoconf bison build-essential curl gettext git libgd-dev libcurl4-openssl-dev libedit-dev libicu-dev libjpeg-dev libmysqlclient-dev libonig-dev libpng-dev libpq-dev libreadline-dev libsqlite3-dev libssl-dev libxml2-dev libzip-dev openssl pkg-config re2c zlib1g-dev ca-certificates wget libtool automake gcc-9 g++-9
+            sudo apt-get install -y autoconf bison build-essential curl gettext git libgd-dev libcurl4-openssl-dev libedit-dev libicu-dev libjpeg-dev libmysqlclient-dev libonig-dev libpng-dev libpq-dev libreadline-dev libsqlite3-dev libssl-dev libxml2-dev libzip-dev libtidy-dev openssl pkg-config re2c zlib1g-dev ca-certificates wget libtool automake gcc-9 g++-9 libxslt1.1 libxslt1-dev
           else
             apt-get update
-            apt-get install -y autoconf bison build-essential curl gettext git libgd-dev libcurl4-openssl-dev libedit-dev libicu-dev libjpeg-dev libmysqlclient-dev libonig-dev libpng-dev libpq-dev libreadline-dev libsqlite3-dev libssl-dev libxml2-dev libzip-dev openssl pkg-config re2c zlib1g-dev ca-certificates wget libtool automake gcc-9 g++-9
+            apt-get install -y autoconf bison build-essential curl gettext git libgd-dev libcurl4-openssl-dev libedit-dev libicu-dev libjpeg-dev libmysqlclient-dev libonig-dev libpng-dev libpq-dev libreadline-dev libsqlite3-dev libssl-dev libxml2-dev libzip-dev libtidy-dev openssl pkg-config re2c zlib1g-dev ca-certificates wget libtool automake gcc-9 g++-9 libxslt1.1 libxslt1-dev
           fi
 
       - name: Install system packages on macOS
@@ -99,13 +99,8 @@ jobs:
             # Export all variables for php-build
             export ASDF_PHP_OPENSSL_AUTO=yes
             export PHP_BUILD_XDEBUG_ENABLE=off
-            export PHP_BUILD_CONFIGURE_OPTS="--disable-werror --with-external-pcre --disable-fileinfo"
-            export CFLAGS="-Wno-error -Wno-deprecated-declarations -Wno-implicit-function-declaration -Wno-stringop-overflow -O0"
-            export CXXFLAGS="-Wno-error -Wno-deprecated-declarations -O0"
-            export LDFLAGS="-Wl,--no-as-needed"
             export CC="$COMPILER"
             export CXX="$CXXCOMPILER"
-            export MAKE_OPTS="-j1"
 
             # Set for autoconf/configure scripts
             export ac_cv_prog_CC="$COMPILER"
@@ -127,13 +122,8 @@ jobs:
 
             export ASDF_PHP_OPENSSL_AUTO=yes
             export PHP_BUILD_XDEBUG_ENABLE=off
-            export PHP_BUILD_CONFIGURE_OPTS="--disable-werror --with-external-pcre --disable-fileinfo"
-            export CFLAGS="-Wno-error -Wno-deprecated-declarations -Wno-implicit-function-declaration -Wno-stringop-overflow -O0"
-            export CXXFLAGS="-Wno-error -Wno-deprecated-declarations -O0"
-            export LDFLAGS="-Wl,--no-as-needed"
             export CC="$COMPILER"
             export CXX="$CXXCOMPILER"
-            export MAKE_OPTS="-j1"
 
             # Set for autoconf/configure scripts
             export ac_cv_prog_CC="$COMPILER"
@@ -146,9 +136,6 @@ jobs:
             echo "=== Configuring for PHP latest ==="
             export ASDF_PHP_OPENSSL_AUTO=no
             export PHP_BUILD_XDEBUG_ENABLE=off
-            export PHP_BUILD_CONFIGURE_OPTS="--disable-werror"
-            export CFLAGS="-O2"
-            export CXXFLAGS="-O2"
             export CC="gcc"
             export CXX="g++"
           fi

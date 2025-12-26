@@ -145,17 +145,35 @@ check_openssl_compatibility() {
     echo "OpenSSL 1.1 is required to build this PHP version."
     echo ""
 
+    # Debug environment variables
+    echo "=== OpenSSL Auto-install Debug ==="
+    echo "CI=${CI:-false}"
+    echo "GITHUB_ACTIONS=${GITHUB_ACTIONS:-false}"
+    echo "ASDF_PHP_OPENSSL_AUTO=${ASDF_PHP_OPENSSL_AUTO:-no}"
+
     # Auto-install in CI environments or if ASDF_PHP_OPENSSL_AUTO is set
     if [ "${CI:-false}" = "true" ] || [ "${GITHUB_ACTIONS:-false}" = "true" ] || [ "${ASDF_PHP_OPENSSL_AUTO:-no}" != "no" ]; then
       echo "Auto-installing OpenSSL 1.1 (CI environment detected)..."
       REPLY="y"
     else
+      echo "No auto-install conditions met, prompting user..."
       read -p "Install OpenSSL 1.1 automatically? [y/N] " -n 1 -r
       echo
     fi
 
     if [[ $REPLY =~ ^[Yy]$ ]]; then
       echo "Installing OpenSSL 1.1..."
+      echo "=== OpenSSL Installation Debug ==="
+      echo "PLUGIN_DIR=${PLUGIN_DIR}"
+      echo "Installation script: ${PLUGIN_DIR}/lib/install-openssl11.sh"
+      
+      # Check if installation script exists
+      if [ ! -f "${PLUGIN_DIR}/lib/install-openssl11.sh" ]; then
+        echo "✗ OpenSSL installation script not found: ${PLUGIN_DIR}/lib/install-openssl11.sh"
+        exit 1
+      fi
+      
+      echo "Running OpenSSL 1.1 installation..."
       if "${PLUGIN_DIR}/lib/install-openssl11.sh" --auto; then
         echo ""
         echo "✓ OpenSSL 1.1 installed successfully"
@@ -163,6 +181,17 @@ check_openssl_compatibility() {
 
         # Set environment variables for this build
         openssl11_path="${INSTALL_PREFIX:-$HOME/.local/openssl-1.1}"
+        echo "OpenSSL 1.1 path: ${openssl11_path}"
+        
+        # Verify installation
+        if [ -f "${openssl11_path}/bin/openssl" ]; then
+          installed_version=$(LD_LIBRARY_PATH="${openssl11_path}/lib:${LD_LIBRARY_PATH}" "${openssl11_path}/bin/openssl" version 2>/dev/null | awk '{print $2}')
+          echo "✓ Verified OpenSSL 1.1 installation: ${installed_version}"
+        else
+          echo "✗ OpenSSL 1.1 binary not found after installation"
+          exit 1
+        fi
+        
         export PKG_CONFIG_PATH="${openssl11_path}/lib/pkgconfig:${PKG_CONFIG_PATH}"
         export PHP_BUILD_CONFIGURE_OPTS="${PHP_BUILD_CONFIGURE_OPTS} --with-openssl=${openssl11_path}"
         export OPENSSL_CFLAGS="-I${openssl11_path}/include"
@@ -171,6 +200,7 @@ check_openssl_compatibility() {
         echo ""
       else
         echo "✗ OpenSSL 1.1 installation failed"
+        echo "Check the installation log above for details"
         exit 1
       fi
     else
