@@ -166,13 +166,13 @@ check_openssl_compatibility() {
       echo "=== OpenSSL Installation Debug ==="
       echo "PLUGIN_DIR=${PLUGIN_DIR}"
       echo "Installation script: ${PLUGIN_DIR}/lib/install-openssl11.sh"
-      
+
       # Check if installation script exists
       if [ ! -f "${PLUGIN_DIR}/lib/install-openssl11.sh" ]; then
         echo "✗ OpenSSL installation script not found: ${PLUGIN_DIR}/lib/install-openssl11.sh"
         exit 1
       fi
-      
+
       echo "Running OpenSSL 1.1 installation..."
       if "${PLUGIN_DIR}/lib/install-openssl11.sh" --auto; then
         echo ""
@@ -182,7 +182,7 @@ check_openssl_compatibility() {
         # Set environment variables for this build
         openssl11_path="${INSTALL_PREFIX:-$HOME/.local/openssl-1.1}"
         echo "OpenSSL 1.1 path: ${openssl11_path}"
-        
+
         # Verify installation
         if [ -f "${openssl11_path}/bin/openssl" ]; then
           installed_version=$(LD_LIBRARY_PATH="${openssl11_path}/lib:${LD_LIBRARY_PATH}" "${openssl11_path}/bin/openssl" version 2>/dev/null | awk '{print $2}')
@@ -191,7 +191,7 @@ check_openssl_compatibility() {
           echo "✗ OpenSSL 1.1 binary not found after installation"
           exit 1
         fi
-        
+
         export PKG_CONFIG_PATH="${openssl11_path}/lib/pkgconfig:${PKG_CONFIG_PATH}"
         export PHP_BUILD_CONFIGURE_OPTS="${PHP_BUILD_CONFIGURE_OPTS} --with-openssl=${openssl11_path}"
         export OPENSSL_CFLAGS="-I${openssl11_path}/include"
