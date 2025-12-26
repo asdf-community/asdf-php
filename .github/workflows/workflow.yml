@@ -186,7 +186,7 @@ jobs:
           fi
 
           # Set global and test
-          asdf global php ${{ matrix.os.version }}
+          asdf set php ${{ matrix.os.version }}
           echo "Testing PHP installation..."
           php --version
 
