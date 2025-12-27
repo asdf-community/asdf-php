@@ -20,7 +20,7 @@ on:
 env:
   # Common dependencies for all builds
   UBUNTU_DEPS: "autoconf bison build-essential curl gettext git libgd-dev libcurl4-openssl-dev libedit-dev libicu-dev libjpeg-dev libmysqlclient-dev libonig-dev libpng-dev libpq-dev libreadline-dev libsqlite3-dev libssl-dev libxml2-dev libzip-dev libtidy-dev openssl pkg-config re2c zlib1g-dev ca-certificates wget libtool automake gcc-9 g++-9 libxslt1.1 libxslt1-dev autotools-dev m4 libtool-bin"
-  MACOS_DEPS: "autoconf automake bison freetype gd gettext icu4c krb5 libedit libiconv libjpeg libpng libxml2 libzip openssl@1.1 openssl@3 pkg-config re2c zlib"
+  MACOS_DEPS: "autoconf automake bison freetype gd gettext icu4c krb5 libedit libiconv libjpeg libpng libxml2 libzip openssl@1.1 openssl@3 pkg-config re2c zlib bzip2"
 
 jobs:
   plugin_test:
@@ -42,7 +42,7 @@ jobs:
             is_legacy: false
           - os: macos-latest
             version: 8.3.29
-            is_legacy: false
+            is_legacy: true
           # will uncomment later
           # - os: macos-latest
           #   version: 8.0.0
@@ -71,6 +71,15 @@ jobs:
             sudo apt-get install -y ${{ env.UBUNTU_DEPS }}
           elif [ "${{ runner.os }}" = "macOS" ]; then
             brew install ${{ env.MACOS_DEPS }}
+            # Set up macOS-specific environment for PHP build
+            echo "CXXFLAGS=-std=c++17 -stdlib=libc++" >> $GITHUB_ENV
+            # Try versioned icu4c first, fallback to generic
+            if brew --prefix icu4c@78 >/dev/null 2>&1; then
+              ICU_PREFIX="$(brew --prefix icu4c@78)"
+            else
+              ICU_PREFIX="$(brew --prefix icu4c)"
+            fi
+            echo "PKG_CONFIG_PATH=$ICU_PREFIX/lib/pkgconfig:$(brew --prefix openssl@3)/lib/pkgconfig:$(brew --prefix libxml2)/lib/pkgconfig:$PKG_CONFIG_PATH" >> $GITHUB_ENV
           fi
 
       - name: Setup asdf
@@ -105,6 +114,17 @@ jobs:
             echo "ac_cv_prog_CXX=$CXXCOMPILER" >> $GITHUB_ENV
             echo "CONFIG_SHELL=/bin/bash" >> $GITHUB_ENV
 
+            # Add macOS-specific PHP build configure options
+            if [ "${{ runner.os }}" = "macOS" ]; then
+              # Try versioned icu4c first, fallback to generic
+              if brew --prefix icu4c@78 >/dev/null 2>&1; then
+                ICU_PREFIX="$(brew --prefix icu4c@78)"
+              else
+                ICU_PREFIX="$(brew --prefix icu4c)"
+              fi
+              echo "PHP_BUILD_CONFIGURE_OPTS=--with-bz2=$(brew --prefix bzip2) --with-iconv=$(brew --prefix libiconv) --with-openssl=$(brew --prefix openssl@3)" >> $GITHUB_ENV
+            fi
+
             # Debug output
             echo "Compiler: $COMPILER ($($COMPILER --version | head -1))"
             echo 'int main() { return 0; }' > /tmp/test.c
@@ -115,6 +135,17 @@ jobs:
             echo "ASDF_PHP_OPENSSL_AUTO=no" >> $GITHUB_ENV
             echo "CC=gcc" >> $GITHUB_ENV
             echo "CXX=g++" >> $GITHUB_ENV
+
+            # Add macOS-specific PHP build configure options for modern versions
+            if [ "${{ runner.os }}" = "macOS" ]; then
+              # Try versioned icu4c first, fallback to generic
+              if brew --prefix icu4c@78 >/dev/null 2>&1; then
+                ICU_PREFIX="$(brew --prefix icu4c@78)"
+              else
+                ICU_PREFIX="$(brew --prefix icu4c)"
+              fi
+              echo "PHP_BUILD_CONFIGURE_OPTS=--with-bz2=$(brew --prefix bzip2) --with-iconv=$(brew --prefix libiconv) --with-openssl=$(brew --prefix openssl@3)" >> $GITHUB_ENV
+            fi
           fi
 
       - name: Install PHP ${{ matrix.version }}

@@ -262,7 +262,7 @@ setup_compiler_for_old_php() {
 
   # Test basic compilation
   local test_c_file
-  test_c_file=$(mktemp --suffix=.c)
+  test_c_file=$(mktemp /tmp/test_XXXXXX.c)
   echo 'int main() { return 0; }' >"$test_c_file"
 
   if "$target_cc" -o "${test_c_file%.c}" "$test_c_file" 2>/dev/null; then
@@ -426,7 +426,7 @@ validate_compiler_setup() {
 
   # Test basic compilation to ensure compiler works
   local test_c_file
-  test_c_file=$(mktemp --suffix=.c)
+  test_c_file=$(mktemp /tmp/test_XXXXXX.c)
   echo 'int main() { return 0; }' >"$test_c_file"
 
   if "$CC" -o "${test_c_file%.c}" "$test_c_file" 2>/dev/null; then
