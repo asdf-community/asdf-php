@@ -1,0 +1,17 @@
+# Ignore vendor directory (contains php-build submodule/clone)
+vendor/
+
+# Ignore temporary files
+*.tmp
+*.log
+.DS_Store
+
+# Ignore editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Ignore OS files
+Thumbs.db

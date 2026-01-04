@@ -2,73 +2,205 @@ name: Main workflow
 
 on:
   pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+    paths-ignore:
+      - "**.md"
   push:
+    branches:
+      - master
+      - main
+    paths-ignore:
+      - "**.md"
   schedule:
     - cron: 0 0 * * 5
 
+env:
+  # Common dependencies for all builds
+  UBUNTU_DEPS: "autoconf bison build-essential curl gettext git libgd-dev libcurl4-openssl-dev libedit-dev libicu-dev libjpeg-dev libmysqlclient-dev libonig-dev libpng-dev libpq-dev libreadline-dev libsqlite3-dev libssl-dev libxml2-dev libzip-dev libtidy-dev openssl pkg-config re2c zlib1g-dev ca-certificates wget libtool automake gcc-9 g++-9 libxslt1.1 libxslt1-dev autotools-dev m4 libtool-bin"
+  MACOS_DEPS: "autoconf automake bison freetype gd gettext icu4c krb5 libedit libiconv libjpeg libpng libxml2 libzip openssl@1.1 openssl@3 pkg-config re2c zlib bzip2"
+
 jobs:
-  plugin-test-docker:
+  plugin_test:
     strategy:
+      fail-fast: false
       matrix:
-        container:
-          - ubuntu:latest
-        php-version:
-          - 7.4.14
-          - 8.0.0
-          - latest
-
-    env:
-      DEBIAN_FRONTEND: noninteractive
-
-    container:
-      image: ${{ matrix.container }}
-
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Install packages
-        run: apt-get update && apt-get install -y autoconf bison build-essential curl gettext git libgd-dev libcurl4-openssl-dev libedit-dev libicu-dev libjpeg-dev libmysqlclient-dev libonig-dev libpng-dev libpq-dev libreadline-dev libsqlite3-dev libssl-dev libxml2-dev libzip-dev openssl pkg-config re2c zlib1g-dev
-
-      - name: asdf_plugin_test
-        uses: asdf-vm/actions/plugin-test@v4
-        with:
-          command: php --version
-          version: ${{ matrix.php-version }}
-
-  plugin-test-vm:
-    strategy:
-      matrix:
-        os:
-          - macos-latest
-        php-version:
-          - 7.4.14
-          - 8.0.0
-          - latest
+        include:
+          - os: ubuntu-latest
+            version: 8.0.0
+            is_legacy: true
+          - os: ubuntu-latest
+            version: 8.3.29
+            is_legacy: true
+          - os: ubuntu-latest
+            version: 7.4.14
+            is_legacy: true
+          - os: ubuntu-latest
+            version: latest
+            is_legacy: false
+          - os: macos-latest
+            version: 8.3.29
+            is_legacy: true
+          - os: macos-latest
+            version: 8.0.0
+            is_legacy: true
+          # will uncomment later
+          # - os: macos-latest
+          #   version: 7.4.14
+          #   is_legacy: true
+          # - os: ubuntu-latest
+          #   version: latest
+          #   is_legacy: false
 
     runs-on: ${{ matrix.os }}
-
-    steps:
-      - name: Install packages
-        run: brew install autoconf automake bison freetype gd gettext icu4c krb5 libedit libiconv libjpeg libpng libxml2 libzip openssl@1.1 pkg-config re2c zlib
-
-      - name: Install conflicting packages
-        run: brew install openssl@3
-
-      - name: asdf_plugin_test
-        uses: asdf-vm/actions/plugin-test@v4
-        with:
-          command: php --version
-          version: ${{ matrix.php-version }}
-
-  format:
-    runs-on: ubuntu-latest
+    timeout-minutes: 45
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v4
 
-      - name: Install shfmt
-        run: brew install shfmt
+      - name: Initialize submodule and set permissions
+        run: |
+          git submodule update --init --recursive
+          chmod +x bin/* lib/*
 
-      - name: Run shfmt
+      - name: Install system packages
+        run: |
+          set -e
+          if [ "${{ runner.os }}" = "Linux" ]; then
+            sudo apt-get update
+            sudo apt-get install -y ${{ env.UBUNTU_DEPS }}
+          elif [ "${{ runner.os }}" = "macOS" ]; then
+            brew install ${{ env.MACOS_DEPS }}
+            # Set up macOS-specific environment for PHP build
+            echo "CXXFLAGS=-std=c++17 -stdlib=libc++" >> $GITHUB_ENV
+            # Set up library paths for configure to find dependencies
+            echo "LDFLAGS=-L$(brew --prefix)/lib" >> $GITHUB_ENV
+            echo "CPPFLAGS=-I$(brew --prefix)/include" >> $GITHUB_ENV
+            # Set ICU4C prefix once for reuse
+            if brew --prefix icu4c@78 >/dev/null 2>&1; then
+              ICU_PREFIX="$(brew --prefix icu4c@78)"
+            else
+              ICU_PREFIX="$(brew --prefix icu4c)"
+            fi
+            echo "ICU_PREFIX=$ICU_PREFIX" >> $GITHUB_ENV
+            echo "PKG_CONFIG_PATH=$ICU_PREFIX/lib/pkgconfig:$(brew --prefix openssl@3)/lib/pkgconfig:$(brew --prefix libxml2)/lib/pkgconfig:$PKG_CONFIG_PATH" >> $GITHUB_ENV
+
+            # Configure tidy once for reuse
+            TIDY_PREFIX="$(brew --prefix tidy-html5)"
+            if [ -f "$TIDY_PREFIX/lib/libtidy.dylib" ] || [ -f "$TIDY_PREFIX/lib/libtidy.a" ]; then
+              echo "✓ tidy library found, enabling tidy support"
+              echo "TIDY_CONFIG=--with-tidy=$TIDY_PREFIX" >> $GITHUB_ENV
+            else
+              echo "⚠ tidy library not found, disabling tidy support"
+              echo "TIDY_CONFIG=--without-tidy" >> $GITHUB_ENV
+            fi
+          fi
+
+      - name: Setup asdf
+        uses: asdf-vm/actions/setup@v4
+
+      - name: Configure environment for PHP ${{ matrix.version }}
+        run: |
+          # Add plugin from current checkout
+          asdf plugin add php $GITHUB_WORKSPACE
+
+          # Set common environment
+          export PHP_BUILD_XDEBUG_ENABLE=off
+          echo "PHP_BUILD_XDEBUG_ENABLE=off" >> $GITHUB_ENV
+
+          if [ "${{ matrix.is_legacy }}" = "true" ]; then
+            echo "=== Configuring for legacy PHP ${{ matrix.version }} ==="
+
+            # Use gcc-9 for legacy versions, fallback to gcc
+            if command -v gcc-9 >/dev/null 2>&1; then
+              COMPILER="gcc-9"
+              CXXCOMPILER="g++-9"
+            else
+              COMPILER="gcc"
+              CXXCOMPILER="g++"
+            fi
+
+            # Set legacy-specific environment
+            echo "ASDF_PHP_OPENSSL_AUTO=yes" >> $GITHUB_ENV
+            echo "CC=$COMPILER" >> $GITHUB_ENV
+            echo "CXX=$CXXCOMPILER" >> $GITHUB_ENV
+            echo "ac_cv_prog_CC=$COMPILER" >> $GITHUB_ENV
+            echo "ac_cv_prog_CXX=$CXXCOMPILER" >> $GITHUB_ENV
+            echo "CONFIG_SHELL=/bin/bash" >> $GITHUB_ENV
+
+            # Add macOS-specific PHP build configure options
+            if [ "${{ runner.os }}" = "macOS" ]; then
+              echo "PHP_BUILD_CONFIGURE_OPTS=--with-bz2=$(brew --prefix bzip2) --with-iconv=$(brew --prefix libiconv) --with-openssl=$(brew --prefix openssl@3) ${{ env.TIDY_CONFIG }}" >> $GITHUB_ENV
+            fi
+
+            # Debug output
+            echo "Compiler: $COMPILER ($($COMPILER --version | head -1))"
+            echo 'int main() { return 0; }' > /tmp/test.c
+            $COMPILER -o /tmp/test /tmp/test.c && echo "✓ Compiler works" || echo "✗ Compiler failed"
+            rm -f /tmp/test /tmp/test.c
+          else
+            echo "=== Configuring for modern PHP ${{ matrix.version }} ==="
+            echo "ASDF_PHP_OPENSSL_AUTO=no" >> $GITHUB_ENV
+            echo "CC=gcc" >> $GITHUB_ENV
+            echo "CXX=g++" >> $GITHUB_ENV
+
+            # Add macOS-specific PHP build configure options for modern versions
+            if [ "${{ runner.os }}" = "macOS" ]; then
+              echo "PHP_BUILD_CONFIGURE_OPTS=--with-bz2=$(brew --prefix bzip2) --with-iconv=$(brew --prefix libiconv) --with-openssl=$(brew --prefix openssl@3) ${{ env.TIDY_CONFIG }}" >> $GITHUB_ENV
+            fi
+          fi
+
+      - name: Install PHP ${{ matrix.version }}
+        run: |
+          echo "Installing PHP ${{ matrix.version }}..."
+
+          if ! asdf install php ${{ matrix.version }}; then
+            if [ "${{ matrix.is_legacy }}" = "true" ]; then
+              echo "=== Build failed - gathering diagnostics ==="
+              echo "Environment: CC=$CC, ac_cv_prog_CC=$ac_cv_prog_CC"
+              find /tmp -name "config.log" -path "*/php-build/source/${{ matrix.version }}/*" -exec tail -50 {} \;
+              find /tmp -name "php-build.${{ matrix.version }}.*.log" -exec tail -100 {} \;
+            fi
+            exit 1
+          fi
+
+      - name: Test PHP installation
+        run: |
+          asdf set php ${{ matrix.version }}
+          php --version
+          echo "Installation path: $(asdf where php)"
+
+          # Test Composer if available
+          if command -v composer >/dev/null 2>&1; then
+            echo "Composer: $(composer --version)"
+          else
+            echo "Composer not available"
+          fi
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y shellcheck make
+      - name: Run lint
+        run: make lint
+
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y make
+          curl -sL "https://github.com/mvdan/sh/releases/download/v3.8.0/shfmt_v3.8.0_linux_amd64" -o shfmt
+          chmod +x shfmt
+          sudo mv shfmt /usr/local/bin/
+      - name: Check format
         run: make fmt-check

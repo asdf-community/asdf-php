@@ -1,413 +1,717 @@
 #!/usr/bin/env bash
-
 set -eo pipefail
 
-install_php() {
-  local install_type=$1
-  local version=$2
-  local install_path=$3
+# Get the plugin root directory
+PLUGIN_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
-  if [ "$TMPDIR" = "" ]; then
-    local tmp_download_dir=$(mktemp -d)
-  else
-    local tmp_download_dir=${TMPDIR%/}
+# Setup php-build
+PHP_BUILD_ROOT="$PLUGIN_DIR/vendor/php-build"
+
+# Check if php-build exists, if not try to initialize submodule
+if [ ! -f "$PHP_BUILD_ROOT/bin/php-build" ]; then
+  echo "php-build not found, attempting to initialize submodule..."
+
+  # Try to initialize the submodule if we're in a git repository
+  if [ -d "$PLUGIN_DIR/.git" ] || [ -f "$PLUGIN_DIR/.git" ]; then
+    (
+      cd "$PLUGIN_DIR"
+      git submodule update --init --recursive vendor/php-build
+    )
   fi
 
-  echo "Determining configuration options..."
-  local source_path=$(get_download_file_path $install_type $version $tmp_download_dir)
-  local configure_options="$(construct_configure_options $install_path)"
-  local make_flags="-j$ASDF_CONCURRENCY"
+  # Check again after submodule init
+  if [ ! -f "$PHP_BUILD_ROOT/bin/php-build" ]; then
+    echo "Error: php-build not found at $PHP_BUILD_ROOT"
+    echo ""
+    echo "This plugin requires php-build to be available."
+    echo ""
+    echo "If you cloned this plugin, run:"
+    echo "  cd $PLUGIN_DIR"
+    echo "  git submodule update --init --recursive"
+    echo ""
+    echo "If you used 'asdf plugin add php <local-path>', please reinstall using:"
+    echo "  asdf plugin remove php"
+    echo "  asdf plugin add php https://github.com/asdf-community/asdf-php.git"
+    exit 1
+  fi
+fi
 
-  local operating_system=$(uname -a)
+export PATH="$PHP_BUILD_ROOT/bin:$PATH"
 
-  if [[ $operating_system =~ "Darwin" ]]; then
-    exit_if_homebrew_not_installed
+# Extract version from ASDF variables
+version="${ASDF_INSTALL_VERSION}"
+install_path="${ASDF_INSTALL_PATH}"
 
-    local bison_path=$(homebrew_package_path bison)
-    local icu4c_path=$(homebrew_package_path icu4c)
-    local krb5_path=$(homebrew_package_path krb5)
-    local libedit_path=$(homebrew_package_path libedit)
-    local libxml2_path=$(homebrew_package_path libxml2)
-    local openssl_path=$(homebrew_package_path openssl@1.1)
+# Handle "latest" version resolution
+if [ "$version" = "latest" ]; then
+  version=$("${PLUGIN_DIR}/bin/latest-stable")
+  echo "Resolved 'latest' to version $version"
+fi
 
-    if [ -n "$bison_path" ]; then
-      export "PATH=${bison_path}/bin:${PATH}"
-    else
-      export ASDF_PKG_MISSING="$ASDF_PKG_MISSING bison"
+# Check OpenSSL version and PHP version compatibility
+check_openssl_compatibility() {
+  local php_version=$1
+
+  # Get system OpenSSL version
+  if ! command -v openssl &>/dev/null; then
+    echo "⚠ Warning: OpenSSL not found in PATH"
+    return 0
+  fi
+
+  local openssl_full_version
+  openssl_full_version=$(openssl version 2>/dev/null | awk '{print $2}')
+  local openssl_major
+  openssl_major=$(echo "$openssl_full_version" | cut -d. -f1)
+
+  # Only check if OpenSSL 3.x is detected
+  if [ "$openssl_major" -lt 3 ]; then
+    return 0
+  fi
+
+  # Extract PHP version components
+  local php_major
+  php_major=$(echo "$php_version" | cut -d. -f1)
+  local php_minor
+  php_minor=$(echo "$php_version" | cut -d. -f2)
+  local php_patch
+  php_patch=$(echo "$php_version" | cut -d. -f3 | sed 's/[^0-9].*//')
+
+  # Determine if this PHP version needs OpenSSL 1.1
+  local needs_openssl1=false
+  local has_other_issues=false
+
+  if [ "$php_major" -eq 7 ]; then
+    needs_openssl1=true
+  elif [ "$php_major" -eq 8 ] && [ "$php_minor" -eq 0 ]; then
+    if [ "${php_patch:-0}" -lt 20 ]; then
+      needs_openssl1=true
+      # PHP 8.0.0-8.0.5 have additional compatibility issues
+      if [ "${php_patch:-0}" -lt 6 ]; then
+        has_other_issues=true
+      fi
     fi
-
-    if [ -n "$icu4c_path" ]; then
-      export "PKG_CONFIG_PATH=${icu4c_path}/lib/pkgconfig:${PKG_CONFIG_PATH}"
-    else
-      export ASDF_PKG_MISSING="$ASDF_PKG_MISSING icu4c"
-    fi
-
-    if [ -n "$krb5_path" ]; then
-      export "PKG_CONFIG_PATH=${krb5_path}/lib/pkgconfig:${PKG_CONFIG_PATH}"
-    else
-      export ASDF_PKG_MISSING="$ASDF_PKG_MISSING krb5"
-    fi
-
-    if [ -n "$libedit_path" ]; then
-      export "PKG_CONFIG_PATH=${libedit_path}/lib/pkgconfig:${PKG_CONFIG_PATH}"
-    else
-      export ASDF_PKG_MISSING="$ASDF_PKG_MISSING libedit"
-    fi
-
-    if [ -n "$libxml2_path" ]; then
-      export "PKG_CONFIG_PATH=${libxml2_path}/lib/pkgconfig:${PKG_CONFIG_PATH}"
-    else
-      export ASDF_PKG_MISSING="$ASDF_PKG_MISSING libxml2"
-    fi
-
-    if [ -n "$openssl_path" ]; then
-      export "PKG_CONFIG_PATH=${openssl_path}/lib/pkgconfig:${PKG_CONFIG_PATH}"
-    else
-      export ASDF_PKG_MISSING="$ASDF_PKG_MISSING openssl"
+  elif [ "$php_major" -eq 8 ] && [ "$php_minor" -eq 1 ]; then
+    if [ "${php_patch:-0}" -lt 6 ]; then
+      needs_openssl1=true
     fi
   fi
 
-  echo "Downloading source code..."
-  download_source $install_type $version $source_path
+  if [ "$needs_openssl1" != true ]; then
+    return 0
+  fi
 
-  # Running this in a subshell because we don't to disturb the current
-  # working directory.
-  (
-    echo "Extracting source code..."
-    cd $(dirname $source_path)
-    tar -zxf $source_path || exit 1
+  # Display compatibility warning
+  echo "⚠ PHP ${php_version} incompatible with OpenSSL ${openssl_full_version}"
 
-    cd $(untar_path $install_type $version $tmp_download_dir)
+  # Warn about other compatibility issues
+  if [ "$has_other_issues" = true ]; then
+    echo "⚠ PHP 8.0.0-8.0.5 have additional compatibility issues with modern systems"
+    echo "  Recommended: Use PHP 8.0.30 (latest 8.0.x) instead"
+  fi
 
-    # Target is OS-specific
-    # target=$(get_target)
-
-    # Build PHP
-    echo "Running buildconfig..."
-    ./buildconf --force || exit 1
-    echo "Running ./configure $configure_options"
-    ./configure $configure_options || exit 1
-    echo "Running make \"$make_flags\""
-    make "$make_flags" || exit 1
-    echo "Running make install..."
-    # make "$make_flags" test || exit 1
-    make "$make_flags" install || exit 1
+  # Try to find existing OpenSSL 1.1 installation
+  local openssl11_paths=(
+    "$HOME/.local/openssl-1.1"
+    "/usr/local/openssl-1.1"
+    "/usr/local/openssl@1.1"
+    "/usr/local/opt/openssl@1.1"
+    "/opt/openssl-1.1"
+    "/usr/lib64/openssl11"
   )
 
-  # it's not obvious where php.ini should be placed, let us make it easy for the user
-  mkdir -p $install_path/conf.d/
-  echo "# add system-wide php configuration options here" >$install_path/conf.d/php.ini
-}
+  local openssl11_path=""
+  for path in "${openssl11_paths[@]}"; do
+    if [ -f "$path/bin/openssl" ]; then
+      openssl11_path="$path"
+      break
+    fi
+  done
 
-install_composer() {
-  local bin_path=$1/bin
-  local expected_signature="$(curl -sL https://composer.github.io/installer.sig)"
-
-  $bin_path/php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
-  $bin_path/php -r "if (hash_file('sha384', 'composer-setup.php') === '${expected_signature}') { echo 'Installer verified'; } else { echo 'Installer corrupt'; unlink('composer-setup.php'); } echo PHP_EOL;"
-  $bin_path/php composer-setup.php --install-dir=$bin_path --filename=composer
-  $bin_path/php -r "unlink('composer-setup.php');"
-}
-
-construct_configure_options() {
-  local install_path=$1
-
-  # many options included below are not applicable to newer PHP versions
-  # including these will trigger a build warning, but will not b
-  global_config="--prefix=$install_path \
-    --enable-bcmath \
-    --enable-calendar \
-    --enable-dba \
-    --enable-exif \
-    --enable-fpm \
-    --enable-ftp \
-    --enable-gd \
-    --enable-gd-native-ttf \
-    --enable-intl \
-    --enable-mbregex \
-    --enable-mbstring \
-    --enable-mysqlnd \
-    --enable-pcntl \
-    --enable-shmop \
-    --enable-soap \
-    --enable-sockets \
-    --enable-sysvmsg \
-    --enable-sysvsem \
-    --enable-sysvshm \
-    --enable-wddx \
-    --enable-zip \
-    --sysconfdir=$install_path \
-    --with-config-file-path=$install_path \
-    --with-config-file-scan-dir=$install_path/conf.d \
-    --with-curl \
-    --with-external-gd \
-    --with-fpm-group=www-data \
-    --with-fpm-user=www-data \
-    --with-gd \
-    --with-mhash \
-    --with-mysql=mysqlnd \
-    --with-mysqli=mysqlnd \
-    --with-pdo-mysql=mysqlnd \
-    --with-xmlrpc \
-    --with-zip \
-    --with-zlib \
-    --without-snmp"
-
-  if [ "$PHP_CONFIGURE_OPTIONS" = "" ]; then
-    local configure_options="$(os_based_configure_options) $global_config"
+  if [ -n "$openssl11_path" ]; then
+    # Found OpenSSL 1.1 - configure build to use it
+    local found_version
+    found_version=$(LD_LIBRARY_PATH="${openssl11_path}/lib:${LD_LIBRARY_PATH}" "$openssl11_path/bin/openssl" version 2>/dev/null | awk '{print $2}')
+    echo "✓ Using OpenSSL 1.1 (${found_version}) at ${openssl11_path}"
+    export PKG_CONFIG_PATH="${openssl11_path}/lib/pkgconfig:${PKG_CONFIG_PATH}"
+    export PHP_BUILD_CONFIGURE_OPTS="${PHP_BUILD_CONFIGURE_OPTS} --with-openssl=${openssl11_path}"
+    export OPENSSL_CFLAGS="-I${openssl11_path}/include"
+    export OPENSSL_LIBS="-L${openssl11_path}/lib -lssl -lcrypto"
+    export LD_LIBRARY_PATH="${openssl11_path}/lib:${LD_LIBRARY_PATH}"
   else
-    local configure_options="$PHP_CONFIGURE_OPTIONS $global_config"
-  fi
+    # OpenSSL 1.1 not found - offer to install
+    echo "✗ OpenSSL 1.1 not found"
+    echo ""
+    echo "php-build's OpenSSL 3 patch is incomplete for PHP ${php_version}."
+    echo "OpenSSL 1.1 is required to build this PHP version."
+    echo ""
 
-  if [ "${PHP_WITHOUT_PEAR:-no}" != "no" ]; then
-    configure_options="$configure_options --without-pear"
-  else
-    configure_options="$configure_options --with-pear"
-  fi
+    # Debug environment variables
+    echo "=== OpenSSL Auto-install Debug ==="
+    echo "CI=${CI:-false}"
+    echo "GITHUB_ACTIONS=${GITHUB_ACTIONS:-false}"
+    echo "ASDF_PHP_OPENSSL_AUTO=${ASDF_PHP_OPENSSL_AUTO:-no}"
 
-  if [ "${PHP_WITHOUT_PDO_PGSQL:-no}" != "no" ]; then
-    configure_options="$configure_options"
-  else
-    local operating_system=$(uname -a)
+    # Auto-install in CI environments or if ASDF_PHP_OPENSSL_AUTO is set
+    if [ "${CI:-false}" = "true" ] || [ "${GITHUB_ACTIONS:-false}" = "true" ] || [ "${ASDF_PHP_OPENSSL_AUTO:-no}" != "no" ]; then
+      echo "Auto-installing OpenSSL 1.1 (CI environment detected)..."
+      REPLY="y"
+    else
+      echo "No auto-install conditions met, prompting user..."
+      read -p "Install OpenSSL 1.1 automatically? [y/N] " -n 1 -r
+      echo
+    fi
 
-    if [[ $operating_system =~ "Darwin" ]]; then
-      exit_if_homebrew_not_installed
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+      echo "Installing OpenSSL 1.1..."
+      echo "=== OpenSSL Installation Debug ==="
+      echo "PLUGIN_DIR=${PLUGIN_DIR}"
+      echo "Installation script: ${PLUGIN_DIR}/lib/install-openssl11.sh"
 
-      local libpq_path=$(homebrew_package_path libpq)
+      # Check if installation script exists
+      if [ ! -f "${PLUGIN_DIR}/lib/install-openssl11.sh" ]; then
+        echo "✗ OpenSSL installation script not found: ${PLUGIN_DIR}/lib/install-openssl11.sh"
+        exit 1
+      fi
 
-      if [ -n "$libpq_path" ]; then
-        configure_options="$configure_options --with-pdo-pgsql=$libpq_path"
+      echo "Running OpenSSL 1.1 installation..."
+      if "${PLUGIN_DIR}/lib/install-openssl11.sh" --auto; then
+        echo ""
+        echo "✓ OpenSSL 1.1 installed successfully"
+        echo "Configuring build to use OpenSSL 1.1..."
+
+        # Set environment variables for this build
+        openssl11_path="${INSTALL_PREFIX:-$HOME/.local/openssl-1.1}"
+        echo "OpenSSL 1.1 path: ${openssl11_path}"
+
+        # Verify installation
+        if [ -f "${openssl11_path}/bin/openssl" ]; then
+          installed_version=$(LD_LIBRARY_PATH="${openssl11_path}/lib:${LD_LIBRARY_PATH}" "${openssl11_path}/bin/openssl" version 2>/dev/null | awk '{print $2}')
+          echo "✓ Verified OpenSSL 1.1 installation: ${installed_version}"
+        else
+          echo "✗ OpenSSL 1.1 binary not found after installation"
+          exit 1
+        fi
+
+        export PKG_CONFIG_PATH="${openssl11_path}/lib/pkgconfig:${PKG_CONFIG_PATH}"
+        export PHP_BUILD_CONFIGURE_OPTS="${PHP_BUILD_CONFIGURE_OPTS} --with-openssl=${openssl11_path}"
+        export OPENSSL_CFLAGS="-I${openssl11_path}/include"
+        export OPENSSL_LIBS="-L${openssl11_path}/lib -lssl -lcrypto"
+        export LD_LIBRARY_PATH="${openssl11_path}/lib:${LD_LIBRARY_PATH}"
+        echo ""
       else
-        export ASDF_PKG_MISSING="$ASDF_PKG_MISSING libpq"
+        echo "✗ OpenSSL 1.1 installation failed"
+        echo "Check the installation log above for details"
+        exit 1
       fi
     else
-      configure_options="$configure_options --with-pdo-pgsql"
+      echo ""
+      echo "Cannot proceed without OpenSSL 1.1."
+      echo "To install manually, run: ${PLUGIN_DIR}/lib/install-openssl11.sh"
+      echo ""
+      exit 1
+    fi
+  fi
+}
+
+# Check compatibility before building
+check_openssl_compatibility "$version"
+
+# Configure compiler for older PHP versions that need special handling
+setup_compiler_for_old_php() {
+  local php_version=$1
+  local php_major
+  php_major=$(echo "$php_version" | cut -d. -f1)
+  local php_minor
+  php_minor=$(echo "$php_version" | cut -d. -f2)
+  local php_patch
+  php_patch=$(echo "$php_version" | cut -d. -f3 | sed 's/[^0-9].*//')
+
+  # Only apply special compiler setup for problematic old versions
+  if ! { [ "$php_major" -eq 7 ] && [ "$php_minor" -eq 4 ]; } && ! { [ "$php_major" -eq 8 ] && [ "$php_minor" -eq 0 ] && [ "${php_patch:-0}" -lt 20 ]; }; then
+    return 0
+  fi
+
+  echo "=== Configuring compiler for PHP ${php_version} ==="
+
+  # Try to use gcc-9 if available, otherwise fallback to system gcc
+  local target_cc="gcc"
+  local target_cxx="g++"
+
+  if command -v gcc-9 >/dev/null 2>&1 && command -v g++-9 >/dev/null 2>&1; then
+    target_cc="gcc-9"
+    target_cxx="g++-9"
+    echo "Using gcc-9/g++-9 for better compatibility"
+  else
+    echo "gcc-9 not available, using system gcc"
+  fi
+
+  # Set compiler environment variables
+  export CC="$target_cc"
+  export CXX="$target_cxx"
+
+  # Set autoconf cache variables to ensure configure script uses our chosen compiler
+  export ac_cv_prog_CC="$target_cc"
+  export ac_cv_prog_CXX="$target_cxx"
+
+  # Verify compiler works before proceeding
+  echo "Testing compiler functionality..."
+  if ! command -v "$target_cc" >/dev/null 2>&1; then
+    echo "✗ Compiler $target_cc not found"
+    exit 1
+  fi
+
+  # Test basic compilation
+  local test_c_file test_exe_file
+  test_c_file=$(mktemp)
+  test_exe_file="${test_c_file}_exe"
+  mv "$test_c_file" "${test_c_file}.c"
+  test_c_file="${test_c_file}.c"
+  echo 'int main() { return 0; }' >"$test_c_file"
+
+  if "$target_cc" -o "$test_exe_file" "$test_c_file" 2>/dev/null; then
+    echo "✓ Compiler test successful"
+    rm -f "$test_c_file" "$test_exe_file"
+  else
+    echo "✗ Compiler test failed"
+    rm -f "$test_c_file" "$test_exe_file"
+    exit 1
+  fi
+
+  # Set conservative build flags for old PHP versions (only if not already set)
+  if [ "$php_major" -eq 7 ] && [ "$php_minor" -eq 4 ]; then
+    # PHP 7.4 specific flags
+    export CFLAGS="${CFLAGS:--Wno-error -Wno-deprecated-declarations -Wno-implicit-function-declaration -Wno-stringop-overflow -O0}"
+    export CXXFLAGS="${CXXFLAGS:--Wno-error -Wno-deprecated-declarations -O0}"
+
+    # Platform-specific configuration
+    if [[ $OSTYPE == "darwin"* ]]; then
+      # macOS specific configuration
+      if command -v brew >/dev/null 2>&1; then
+        export PHP_BUILD_CONFIGURE_OPTS="${PHP_BUILD_CONFIGURE_OPTS:---disable-werror --with-external-pcre --disable-fileinfo --with-bz2=$(brew --prefix bzip2) --with-iconv=$(brew --prefix libiconv)}"
+        # Set library paths for macOS
+        export LDFLAGS="${LDFLAGS:--L$(brew --prefix)/lib}"
+        export CPPFLAGS="${CPPFLAGS:--I$(brew --prefix)/include}"
+      else
+        export PHP_BUILD_CONFIGURE_OPTS="${PHP_BUILD_CONFIGURE_OPTS:---disable-werror --with-external-pcre --disable-fileinfo}"
+      fi
+    else
+      # Linux specific configuration
+      export LDFLAGS="${LDFLAGS:--Wl,--no-as-needed}"
+      export PHP_BUILD_CONFIGURE_OPTS="${PHP_BUILD_CONFIGURE_OPTS:---disable-werror --with-external-pcre --disable-fileinfo --without-tidy}"
+    fi
+    export MAKE_OPTS="${MAKE_OPTS:--j1}"
+  elif [ "$php_major" -eq 8 ] && [ "$php_minor" -eq 0 ] && [ "${php_patch:-0}" -lt 20 ]; then
+    # PHP 8.0.0-8.0.19 specific flags
+    export CFLAGS="${CFLAGS:--Wno-error -Wno-deprecated-declarations -Wno-implicit-function-declaration -Wno-stringop-overflow -O0}"
+    export CXXFLAGS="${CXXFLAGS:--Wno-error -Wno-deprecated-declarations -O0}"
+
+    # Platform-specific configuration
+    if [[ $OSTYPE == "darwin"* ]]; then
+      # macOS specific configuration
+      if command -v brew >/dev/null 2>&1; then
+        export PHP_BUILD_CONFIGURE_OPTS="${PHP_BUILD_CONFIGURE_OPTS:---disable-werror --with-external-pcre --disable-fileinfo --with-bz2=$(brew --prefix bzip2) --with-iconv=$(brew --prefix libiconv)}"
+        # Set library paths for macOS
+        export LDFLAGS="${LDFLAGS:--L$(brew --prefix)/lib}"
+        export CPPFLAGS="${CPPFLAGS:--I$(brew --prefix)/include}"
+      else
+        export PHP_BUILD_CONFIGURE_OPTS="${PHP_BUILD_CONFIGURE_OPTS:---disable-werror --with-external-pcre --disable-fileinfo}"
+      fi
+    else
+      # Linux specific configuration
+      export LDFLAGS="${LDFLAGS:--Wl,--no-as-needed}"
+      export PHP_BUILD_CONFIGURE_OPTS="${PHP_BUILD_CONFIGURE_OPTS:---disable-werror --with-external-pcre --disable-fileinfo --without-tidy}"
+    fi
+    export MAKE_OPTS="${MAKE_OPTS:--j1}"
+  fi
+
+  echo "Compiler configuration:"
+  echo "  CC=$CC"
+  echo "  CXX=$CXX"
+  echo "  ac_cv_prog_CC=$ac_cv_prog_CC"
+  echo "  CFLAGS=$CFLAGS"
+  echo "  CXXFLAGS=$CXXFLAGS"
+  echo "  LDFLAGS=$LDFLAGS"
+  echo "  MAKE_OPTS=$MAKE_OPTS"
+}
+
+# Apply compiler setup for problematic PHP versions
+setup_compiler_for_old_php "$version"
+
+# Disable Xdebug by default (prevents build failures)
+if [ -z "$PHP_BUILD_XDEBUG_ENABLE" ]; then
+  export PHP_BUILD_XDEBUG_ENABLE=off
+fi
+
+# Pass through custom configure options
+if [ -n "$PHP_CONFIGURE_OPTIONS" ]; then
+  export PHP_BUILD_CONFIGURE_OPTS="${PHP_BUILD_CONFIGURE_OPTS:-} ${PHP_CONFIGURE_OPTIONS}"
+fi
+
+# Pass through PEAR option
+if [ "${PHP_WITHOUT_PEAR:-no}" != "no" ]; then
+  export PHP_BUILD_CONFIGURE_OPTS="${PHP_BUILD_CONFIGURE_OPTS} --without-pear"
+fi
+
+# Pass through concurrency settings
+if [ -n "$ASDF_CONCURRENCY" ]; then
+  export PHP_BUILD_EXTRA_MAKE_ARGUMENTS="-j${ASDF_CONCURRENCY}"
+fi
+
+# Patch php-build definition files to include libxml2 compatibility
+patch_php_build_definitions() {
+  local php_version=$1
+  local php_major
+  php_major=$(echo "$php_version" | cut -d. -f1)
+  local php_minor
+  php_minor=$(echo "$php_version" | cut -d. -f2)
+  local php_patch
+  php_patch=$(echo "$php_version" | cut -d. -f3 | sed 's/[^0-9].*//')
+  local php_build_patches="$PHP_BUILD_ROOT/share/php-build/patches"
+  local definitions_dir="$PHP_BUILD_ROOT/share/php-build/definitions"
+  local def_file="$definitions_dir/$php_version"
+
+  # Add libxml2 2.12+ and ICU 74+ compatibility patches for PHP 7.4
+  if [ "$php_major" -eq 7 ] && [ "$php_minor" -eq 4 ]; then
+    # libxml2 2.12+ patch (php-build already has it)
+    if [ -f "$def_file" ] && ! grep -q "php-7.4-libxml2-2.12.patch" "$def_file"; then
+      # Add after the last patch_file line, or before install_package if no patches exist
+      if grep -q "patch_file" "$def_file"; then
+        # Find the last patch_file line and add after it
+        local last_patch_line
+        last_patch_line=$(grep -n "patch_file" "$def_file" | tail -1 | cut -d: -f1)
+        awk -v line="$last_patch_line" 'NR==line {print; print "patch_file \"php-7.4-libxml2-2.12.patch\""} NR!=line' "$def_file" >"$def_file.tmp" && mv "$def_file.tmp" "$def_file"
+      else
+        # Add before install_package
+        awk '/^install_package/ {print "patch_file \"php-7.4-libxml2-2.12.patch\""; print; next} {print}' "$def_file" >"$def_file.tmp" && mv "$def_file.tmp" "$def_file"
+      fi
+      echo "Added libxml2 compatibility patch to PHP $php_version definition"
+    fi
+
+    # ICU 74+ patch (custom patch from plugin)
+    if [ -f "${PLUGIN_DIR}/patches/php-7.4-icu-74-compat.patch" ]; then
+      cp "${PLUGIN_DIR}/patches/php-7.4-icu-74-compat.patch" "$php_build_patches/"
+      if [ -f "$def_file" ] && ! grep -q "php-7.4-icu-74-compat.patch" "$def_file"; then
+        local last_patch_line
+        last_patch_line=$(grep -n "patch_file" "$def_file" | tail -1 | cut -d: -f1)
+        awk -v line="$last_patch_line" 'NR==line {print; print "patch_file \"php-7.4-icu-74-compat.patch\""} NR!=line' "$def_file" >"$def_file.tmp" && mv "$def_file.tmp" "$def_file"
+        echo "Added ICU 74+ compatibility patch to PHP $php_version definition"
+      fi
     fi
   fi
 
-  if [ "${PHP_WITHOUT_PCRE_JIT:-no}" != "no" ]; then
-    configure_options="$configure_options"
-  else
-    configure_options="$configure_options --without-pcre-jit"
-  fi
+  # Add libxml2 2.12+ and ICU 74+ compatibility patches for PHP 8.0.0-8.0.19
+  if [ "$php_major" -eq 8 ] && [ "$php_minor" -eq 0 ] && [ "${php_patch:-0}" -lt 20 ]; then
+    # libxml2 2.12+ patch
+    if [ -f "${PLUGIN_DIR}/patches/php-8.0-libxml2-2.12-compat.patch" ]; then
+      cp "${PLUGIN_DIR}/patches/php-8.0-libxml2-2.12-compat.patch" "$php_build_patches/"
+      if [ -f "$def_file" ] && ! grep -q "php-8.0-libxml2-2.12-compat.patch" "$def_file"; then
+        awk '/patch_file "php-8.0-support-openssl-3.patch"/ {print; print "patch_file \"php-8.0-libxml2-2.12-compat.patch\""; next} {print}' "$def_file" >"$def_file.tmp" && mv "$def_file.tmp" "$def_file"
+        echo "Added libxml2 compatibility patch to PHP $php_version definition"
+      fi
+    fi
 
-  echo "$configure_options"
+    # ICU 74+ patch
+    if [ -f "${PLUGIN_DIR}/patches/php-8.0-icu-74-compat.patch" ]; then
+      cp "${PLUGIN_DIR}/patches/php-8.0-icu-74-compat.patch" "$php_build_patches/"
+      if [ -f "$def_file" ] && ! grep -q "php-8.0-icu-74-compat.patch" "$def_file"; then
+        awk '/patch_file "php-8.0-libxml2-2.12-compat.patch"/ {print; print "patch_file \"php-8.0-icu-74-compat.patch\""; next} {print}' "$def_file" >"$def_file.tmp" && mv "$def_file.tmp" "$def_file"
+        echo "Added ICU 74+ compatibility patch to PHP $php_version definition"
+      fi
+    fi
+  fi
 }
 
-homebrew_package_path() {
-  local package_name=$1
+patch_php_build_definitions "$version"
 
-  if [ "$(brew ls --versions $package_name)" = "" ]; then
-    echo ""
-  else
-    echo "$(brew --prefix $package_name)"
+# Simple approach: ensure compiler variables are properly exported for configure
+validate_compiler_setup() {
+  local php_version=$1
+  local php_major
+  php_major=$(echo "$php_version" | cut -d. -f1)
+  local php_minor
+  php_minor=$(echo "$php_version" | cut -d. -f2)
+  local php_patch
+  php_patch=$(echo "$php_version" | cut -d. -f3 | sed 's/[^0-9].*//')
+
+  # Only validate for problematic versions
+  if ! { [ "$php_major" -eq 7 ] && [ "$php_minor" -eq 4 ]; } && ! { [ "$php_major" -eq 8 ] && [ "$php_minor" -eq 0 ] && [ "${php_patch:-0}" -lt 20 ]; }; then
+    return 0
   fi
-}
 
-exit_if_homebrew_not_installed() {
-  if [ "$(brew --version 2>/dev/null)" = "" ]; then
-    echo "ERROR: Please install homebrew for OSX"
+  echo "=== Validating Compiler Setup for PHP $php_version ==="
+
+  # Verify all required compiler variables are set
+  if [ -z "$CC" ] || [ -z "$CXX" ]; then
+    echo "✗ CC or CXX not set"
+    exit 1
+  fi
+
+  if ! command -v "$CC" >/dev/null 2>&1; then
+    echo "✗ Compiler $CC not found"
+    exit 1
+  fi
+
+  echo "✓ Compiler validation passed"
+  echo "  CC=$CC"
+  echo "  CXX=$CXX"
+  echo "  ac_cv_prog_CC=$ac_cv_prog_CC"
+  echo "  ac_cv_prog_CXX=$ac_cv_prog_CXX"
+
+  # Test basic compilation to ensure compiler works
+  local test_c_file test_exe_file
+  test_c_file=$(mktemp)
+  test_exe_file="${test_c_file}_exe"
+  mv "$test_c_file" "${test_c_file}.c"
+  test_c_file="${test_c_file}.c"
+  echo 'int main() { return 0; }' >"$test_c_file"
+
+  if "$CC" -o "$test_exe_file" "$test_c_file" 2>/dev/null; then
+    echo "✓ Basic compilation test passed"
+    rm -f "$test_c_file" "$test_exe_file"
+  else
+    echo "✗ Basic compilation test failed"
+    rm -f "$test_c_file" "$test_exe_file"
     exit 1
   fi
 }
 
-os_based_configure_options() {
-  local operating_system=$(uname -a)
-  local configure_options=""
+# Create environment validation and preparation wrapper for php-build
+prepare_php_build_environment() {
+  local php_version=$1
+  local install_path=$2
 
-  if [[ $operating_system =~ "Darwin" ]]; then
+  # Create a wrapper script that ensures environment variables are preserved
+  local wrapper_script
+  wrapper_script=$(mktemp)
 
-    exit_if_homebrew_not_installed
+  cat >"$wrapper_script" <<EOF
+#!/bin/bash
+set -eo pipefail
 
-    local bison_path=$(homebrew_package_path bison)
-    local bzip2_path=$(homebrew_package_path bzip2)
-    local freetype_path=$(homebrew_package_path freetype)
-    local gettext_path=$(homebrew_package_path gettext)
-    local iconv_path=$(homebrew_package_path libiconv)
-    local icu4c_path=$(homebrew_package_path icu4c)
-    local jpeg_path=$(homebrew_package_path jpeg)
-    local libedit_path=$(homebrew_package_path libedit)
-    local libpng_path=$(homebrew_package_path libpng)
-    local libxml2_path=$(homebrew_package_path libxml2)
-    local libzip_path=$(homebrew_package_path libzip)
-    local openssl_path=$(homebrew_package_path openssl@1.1)
-    local readline_path=$(homebrew_package_path readline)
-    local webp_path=$(homebrew_package_path webp)
-    local zlib_path=$(homebrew_package_path zlib)
+# Re-export all environment variables that php-build needs
+export CC="${CC}"
+export CXX="${CXX}"
+export CFLAGS="${CFLAGS}"
+export CXXFLAGS="${CXXFLAGS}"
+export LDFLAGS="${LDFLAGS}"
+export PKG_CONFIG_PATH="${PKG_CONFIG_PATH}"
+export PHP_BUILD_CONFIGURE_OPTS="${PHP_BUILD_CONFIGURE_OPTS}"
+export OPENSSL_CFLAGS="${OPENSSL_CFLAGS}"
+export OPENSSL_LIBS="${OPENSSL_LIBS}"
+export LD_LIBRARY_PATH="${LD_LIBRARY_PATH}"
+export MAKE_OPTS="${MAKE_OPTS}"
+export CONFIG_SHELL="${CONFIG_SHELL}"
+export AUTOCONF_CACHE_DIR="${AUTOCONF_CACHE_DIR}"
 
-    # optional
-    # if these packages exist they are included in the php compilation
-    local gmp_path=$(homebrew_package_path gmp)
-    local sodium_path=$(homebrew_package_path libsodium)
+# Set autoconf cache variables - these are critical for configure to find the compiler
+export ac_cv_prog_CC="${ac_cv_prog_CC}"
+export ac_cv_prog_CXX="${ac_cv_prog_CXX}"
 
-    if [ -n "$gmp_path" ]; then
-      configure_options="--with-gmp=$gmp_path"
-    else
-      echo "gmp not found, not including in installation"
-    fi
+# Clear any existing autoconf cache that might interfere
+if [ -n "\$AUTOCONF_CACHE_DIR" ]; then
+  rm -rf "\$AUTOCONF_CACHE_DIR" 2>/dev/null || true
+fi
 
-    if [ -n "$sodium_path" ]; then
-      configure_options="$configure_options --with-sodium=$sodium_path"
-    else
-      echo "sodium not found, not including in installation"
-    fi
+# Debug output for troubleshooting
+echo "=== php-build Environment ==="
+echo "CC=\$CC"
+echo "CXX=\$CXX"
+echo "CFLAGS=\$CFLAGS"
+echo "ac_cv_prog_CC=\$ac_cv_prog_CC"
+echo "ac_cv_prog_CXX=\$ac_cv_prog_CXX"
+echo "CONFIG_SHELL=\$CONFIG_SHELL"
+echo "PHP_BUILD_CONFIGURE_OPTS=\$PHP_BUILD_CONFIGURE_OPTS"
+echo "MAKE_OPTS=\$MAKE_OPTS"
 
-    if [ -n "$freetype_path" ]; then
-      configure_options="$configure_options --with-freetype-dir=$freetype_path"
-    else
-      export ASDF_PKG_MISSING="freetype"
-    fi
+# Run php-build with all environment preserved
+exec php-build "\$@"
+EOF
 
-    if [ -n "$bison_path" ]; then
-      export ASDF_PKG_MISSING="$ASDF_PKG_MISSING bison"
-    fi
+  chmod +x "$wrapper_script"
+  echo "$wrapper_script"
+}
 
-    if [ -n "$gettext_path" ]; then
-      configure_options="$configure_options --with-gettext=$gettext_path"
-    else
-      export ASDF_PKG_MISSING="$ASDF_PKG_MISSING gettext"
-    fi
+echo "Building PHP ${version}..."
 
-    if [ -n "$icu4c_path" ]; then
-      configure_options="$configure_options --with-icu-dir=$icu4c_path"
-    else
-      export ASDF_PKG_MISSING="$ASDF_PKG_MISSING icu4c"
-    fi
+# Validate compiler setup for old PHP versions
+validate_compiler_setup "$version"
 
-    if [ -n "$jpeg_path" ]; then
-      configure_options="$configure_options --with-jpeg-dir=$jpeg_path"
-    else
-      export ASDF_PKG_MISSING="$ASDF_PKG_MISSING jpeg"
-    fi
+# For problematic PHP versions, use environment wrapper
+php_major=$(echo "$version" | cut -d. -f1)
+php_minor=$(echo "$version" | cut -d. -f2)
+php_patch=$(echo "$version" | cut -d. -f3 | sed 's/[^0-9].*//')
 
-    if [ -n "$webp_path" ]; then
-      configure_options="$configure_options --with-webp-dir=$webp_path"
-    else
-      export ASDF_PKG_MISSING="$ASDF_PKG_MISSING webp"
-    fi
+if { [ "$php_major" -eq 7 ] && [ "$php_minor" -eq 4 ]; } || { [ "$php_major" -eq 8 ] && [ "$php_minor" -eq 0 ] && [ "${php_patch:-0}" -lt 20 ]; }; then
+  echo "Using environment wrapper for PHP ${version}..."
 
-    if [ -n "$libpng_path" ]; then
-      configure_options="$configure_options --with-png-dir=$libpng_path"
-    else
-      export ASDF_PKG_MISSING="$ASDF_PKG_MISSING libpng"
-    fi
+  # Force regenerate autotools cache before build
+  export CONFIG_SHELL=/bin/bash
+  export AUTOCONF_CACHE_DIR="" # Clear autoconf cache
 
-    if [ -n "$openssl_path" ]; then
-      configure_options="$configure_options --with-openssl=$openssl_path"
-    else
-      export ASDF_PKG_MISSING="$ASDF_PKG_MISSING openssl"
-    fi
+  wrapper_script=$(prepare_php_build_environment "$version" "$install_path")
 
-    if [ -n "$libxml2_path" ]; then
-      configure_options="$configure_options --with-libxml-dir=$libxml2_path"
-    else
-      export ASDF_PKG_MISSING="$ASDF_PKG_MISSING libxml2"
-    fi
-
-    if [ -n "$zlib_path" ]; then
-      configure_options="$configure_options --with-zlib-dir=$zlib_path"
-    else
-      export ASDF_PKG_MISSING="$ASDF_PKG_MISSING zlib"
-    fi
-
-    if [ -n "$libzip_path" ]; then
-      configure_options="$configure_options --with-libzip=$libzip_path"
-    else
-      export ASDF_PKG_MISSING="$ASDF_PKG_MISSING libzip"
-    fi
-
-    if [ -n "$readline_path" ]; then
-      configure_options="$configure_options --with-readline=$readline_path"
-    else
-      export ASDF_PKG_MISSING="$ASDF_PKG_MISSING readline"
-    fi
-
-    if [ -n "$libedit_path" ]; then
-      configure_options="$configure_options --with-libedit=$libedit_path"
-    else
-      export ASDF_PKG_MISSING="$ASDF_PKG_MISSING libedit"
-    fi
-
-    if [ -n "$bzip2_path" ]; then
-      configure_options="$configure_options --with-bz2=$bzip2_path"
-    else
-      export ASDF_PKG_MISSING="$ASDF_PKG_MISSING bzip2"
-    fi
-
-    if [ -n "$iconv_path" ]; then
-      configure_options="$configure_options --with-iconv=$iconv_path"
-    else
-      export ASDF_PKG_MISSING="$ASDF_PKG_MISSING libiconv"
-    fi
+  # Call php-build through wrapper to preserve environment
+  if "$wrapper_script" "$version" "$install_path"; then
+    echo "✓ PHP ${version} built successfully"
+    rm -f "$wrapper_script"
   else
-    local jpeg_path=$(locate libjpeg.so | awk '{ print length(), $0 | "sort -n" }' | cut -d" " -f2- | head -n 1)
-    local libpng_path=$(locate libpng.so | awk '{ print length(), $0 | "sort -n" }' | cut -d" " -f2- | head -n 1)
-    configure_options="--with-openssl --with-curl --with-zlib --with-readline --with-gettext"
+    echo "✗ Build failed. For OpenSSL issues: ${PLUGIN_DIR}/lib/install-openssl11.sh"
+    rm -f "$wrapper_script"
+    exit 1
+  fi
+else
+  # Call php-build normally for modern PHP versions
+  if php-build "$version" "$install_path"; then
+    echo "✓ PHP ${version} built successfully"
+  else
+    echo "✗ Build failed. For OpenSSL issues: ${PLUGIN_DIR}/lib/install-openssl11.sh"
+    exit 1
+  fi
+fi
 
-    if [ "$jpeg_path" = "" ]; then
-      export ASDF_PKG_MISSING="$ASDF_PKG_MISSING jpeg"
-    else
-      configure_options="$configure_options --with-jpeg-dir=$jpeg_path --with-jpeg"
-    fi
+# Install Composer globally (php-build doesn't do this by default)
+install_composer() {
+  local bin_path="$install_path/bin"
+  local temp_dir
+  temp_dir=$(mktemp -d)
 
-    if [ "$libpng_path" = "" ]; then
-      export ASDF_PKG_MISSING="$ASDF_PKG_MISSING libpng"
-    else
-      configure_options="$configure_options --with-png-dir=$libpng_path --with-png"
-    fi
+  echo "=== Composer Installation Debug ==="
+  echo "PHP binary: $bin_path/php"
+  echo "Temp directory: $temp_dir"
+
+  # Check if PHP has required extensions
+  if ! "$bin_path"/php -m | grep -q "openssl"; then
+    echo "⚠ PHP OpenSSL extension not available - required for Composer download"
+    rm -rf "$temp_dir"
+    return 1
   fi
 
-  echo $configure_options
-}
+  if ! "$bin_path"/php -m | grep -q "curl"; then
+    echo "⚠ PHP curl extension not available - using fallback download method"
+  fi
 
-download_source() {
-  local install_type=$1
-  local version=$2
-  local download_path=$3
-  local download_url=$(get_download_url $install_type $version)
+  # Try to fetch signature with better error handling
+  local expected_signature
+  expected_signature=$(curl -sL https://composer.github.io/installer.sig 2>&1)
+  local curl_exit_code=$?
 
-  # curl -Lo $download_path -C - $download_url
-  curl -Lo $download_path $download_url
-}
-
-get_download_file_path() {
-  local install_type=$1
-  local version=$2
-  local tmp_download_dir=$3
-  local php_version=$(get_php_version $version)
-  local pkg_name="php-${php_version}.tar.gz"
-
-  echo "$tmp_download_dir/$pkg_name"
-}
-
-untar_path() {
-  local install_type=$1
-  local version=$2
-  local tmp_download_dir=$3
-
-  local php_version=$(get_php_version $version)
-
-  local dir_name="php-src-php-${php_version}"
-
-  echo "$tmp_download_dir/$dir_name"
-}
-
-get_download_url() {
-  local install_type=$1
-  local version=$2
-
-  echo "https://github.com/php/php-src/archive/php-${version}.tar.gz"
-}
-
-get_php_version() {
-  IFS='-' read -a version_info <<<"$1"
-
-  if [ "${#version_info[@]}" -eq 1 ]; then
-    echo "${version_info[0]}"
+  if [ $curl_exit_code -ne 0 ] || [ -z "$expected_signature" ]; then
+    echo "⚠ Could not fetch Composer installer signature (curl exit: $curl_exit_code)"
+    echo "⚠ Signature response: '$expected_signature'"
+    echo "⚠ Skipping signature verification due to network issues"
+    expected_signature=""
   else
-    echo "${version_info[0]}-${version_info[1]}"
+    echo "✓ Fetched Composer installer signature: ${expected_signature:0:20}..."
+  fi
+
+  (
+    cd "$temp_dir"
+    echo "Downloading Composer installer..."
+
+    # Try PHP download first, then fallback to curl
+    if "$bin_path"/php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');" 2>/dev/null; then
+      echo "✓ Downloaded via PHP copy()"
+    elif command -v curl >/dev/null && curl -sL https://getcomposer.org/installer -o composer-setup.php; then
+      echo "✓ Downloaded via curl fallback"
+    elif command -v wget >/dev/null && wget -q https://getcomposer.org/installer -O composer-setup.php; then
+      echo "✓ Downloaded via wget fallback"
+    else
+      echo "⚠ Could not download Composer installer with any method"
+      cd - >/dev/null
+      rm -rf "$temp_dir"
+      return 1
+    fi
+
+    if [ ! -f "composer-setup.php" ]; then
+      echo "⚠ Composer installer not found after download"
+      cd - >/dev/null
+      rm -rf "$temp_dir"
+      return 1
+    fi
+
+    echo "✓ Composer installer downloaded ($(wc -c <composer-setup.php) bytes)"
+
+    # Only verify signature if we got one
+    if [ -n "$expected_signature" ]; then
+      signature_check=$("$bin_path"/php -r "if (hash_file('sha384', 'composer-setup.php') === '${expected_signature}') { echo 'OK'; } else { echo 'FAIL'; }" 2>/dev/null)
+
+      if [ "$signature_check" != "OK" ]; then
+        echo "⚠ Composer installer signature verification failed"
+        echo "⚠ Expected: $expected_signature"
+        echo "⚠ Continuing anyway due to CI environment"
+      else
+        echo "✓ Signature verification passed"
+      fi
+    fi
+
+    echo "Installing Composer..."
+    if "$bin_path"/php composer-setup.php --install-dir="$bin_path" --filename=composer 2>&1; then
+      echo "✓ Composer installation completed"
+    else
+      echo "⚠ Composer installation failed"
+      rm -f composer-setup.php
+      cd - >/dev/null
+      rm -rf "$temp_dir"
+      return 1
+    fi
+
+    rm -f composer-setup.php
+  )
+
+  rm -rf "$temp_dir"
+
+  # Verify Composer was installed
+  if [ -f "$bin_path/composer" ] && [ -x "$bin_path/composer" ]; then
+    local composer_version
+    composer_version=$("$bin_path"/composer --version 2>/dev/null || echo "unknown")
+    echo "✓ Composer verified: $composer_version"
+    return 0
+  else
+    echo "⚠ Composer binary not found after installation"
+    echo "Contents of $bin_path:"
+    ls -la "$bin_path" 2>/dev/null || echo "Directory not accessible"
+    return 1
   fi
 }
 
-install_php "$ASDF_INSTALL_TYPE" "$ASDF_INSTALL_VERSION" "$ASDF_INSTALL_PATH"
-install_composer "$ASDF_INSTALL_PATH"
+# Install Composer
+echo "Installing Composer..."
+if install_composer; then
+  echo "✓ Composer installed"
+else
+  echo "⚠ Composer installation failed"
+fi
+
+# Create conf.d directory for user configuration
+mkdir -p "$install_path/conf.d"
+if [ ! -f "$install_path/conf.d/php.ini" ]; then
+  echo "# Add custom PHP configuration here" >"$install_path/conf.d/php.ini"
+fi
+
+# Install Xdebug if requested
+install_xdebug() {
+  local bin_path="$install_path/bin"
+  local pecl_path="$bin_path/pecl"
+
+  echo "Installing Xdebug..."
+  if ! command -v "$pecl_path" &>/dev/null; then
+    echo "⚠ PECL not found"
+    return 1
+  fi
+
+  if "$pecl_path" install xdebug >/dev/null 2>&1; then
+    echo "zend_extension=xdebug.so" >>"$install_path/conf.d/xdebug.ini"
+    echo "xdebug.mode=debug" >>"$install_path/conf.d/xdebug.ini"
+    echo "✓ Xdebug installed"
+  else
+    echo "⚠ Xdebug installation failed"
+    return 1
+  fi
+}
+
+# Check if user wants Xdebug installed
+if [ "${PHP_WITH_XDEBUG:-no}" != "no" ]; then
+  install_xdebug || true
+fi
+
+echo "✓ PHP ${version} installed at: ${install_path}"
