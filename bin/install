@@ -261,16 +261,19 @@ setup_compiler_for_old_php() {
   fi
 
   # Test basic compilation
-  local test_c_file
-  test_c_file=$(mktemp /tmp/test_XXXXXX.c)
+  local test_c_file test_exe_file
+  test_c_file=$(mktemp)
+  test_exe_file="${test_c_file}_exe"
+  mv "$test_c_file" "${test_c_file}.c"
+  test_c_file="${test_c_file}.c"
   echo 'int main() { return 0; }' >"$test_c_file"
 
-  if "$target_cc" -o "${test_c_file%.c}" "$test_c_file" 2>/dev/null; then
+  if "$target_cc" -o "$test_exe_file" "$test_c_file" 2>/dev/null; then
     echo "✓ Compiler test successful"
-    rm -f "$test_c_file" "${test_c_file%.c}"
+    rm -f "$test_c_file" "$test_exe_file"
   else
     echo "✗ Compiler test failed"
-    rm -f "$test_c_file" "${test_c_file%.c}"
+    rm -f "$test_c_file" "$test_exe_file"
     exit 1
   fi
 
@@ -455,16 +458,19 @@ validate_compiler_setup() {
   echo "  ac_cv_prog_CXX=$ac_cv_prog_CXX"
 
   # Test basic compilation to ensure compiler works
-  local test_c_file
-  test_c_file=$(mktemp /tmp/test_XXXXXX.c)
+  local test_c_file test_exe_file
+  test_c_file=$(mktemp)
+  test_exe_file="${test_c_file}_exe"
+  mv "$test_c_file" "${test_c_file}.c"
+  test_c_file="${test_c_file}.c"
   echo 'int main() { return 0; }' >"$test_c_file"
 
-  if "$CC" -o "${test_c_file%.c}" "$test_c_file" 2>/dev/null; then
+  if "$CC" -o "$test_exe_file" "$test_c_file" 2>/dev/null; then
     echo "✓ Basic compilation test passed"
-    rm -f "$test_c_file" "${test_c_file%.c}"
+    rm -f "$test_c_file" "$test_exe_file"
   else
     echo "✗ Basic compilation test failed"
-    rm -f "$test_c_file" "${test_c_file%.c}"
+    rm -f "$test_c_file" "$test_exe_file"
     exit 1
   fi
 }
