@@ -5,7 +5,7 @@ set -eo pipefail
 PLUGIN_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 # Detect sed -i syntax for cross-platform compatibility
-if [[ "$OSTYPE" == "darwin"* ]]; then
+if [[ $OSTYPE == "darwin"* ]]; then
   # macOS uses BSD sed which requires an empty string argument for in-place editing
   SED_INPLACE=("sed" "-i" "")
 else
