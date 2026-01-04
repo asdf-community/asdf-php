@@ -284,7 +284,7 @@ setup_compiler_for_old_php() {
     export CXXFLAGS="${CXXFLAGS:--Wno-error -Wno-deprecated-declarations -O0}"
 
     # Platform-specific configuration
-    if [[ "$OSTYPE" == "darwin"* ]]; then
+    if [[ $OSTYPE == "darwin"* ]]; then
       # macOS specific configuration
       if command -v brew >/dev/null 2>&1; then
         export PHP_BUILD_CONFIGURE_OPTS="${PHP_BUILD_CONFIGURE_OPTS:---disable-werror --with-external-pcre --disable-fileinfo --with-bz2=$(brew --prefix bzip2) --with-iconv=$(brew --prefix libiconv)}"
@@ -306,7 +306,7 @@ setup_compiler_for_old_php() {
     export CXXFLAGS="${CXXFLAGS:--Wno-error -Wno-deprecated-declarations -O0}"
 
     # Platform-specific configuration
-    if [[ "$OSTYPE" == "darwin"* ]]; then
+    if [[ $OSTYPE == "darwin"* ]]; then
       # macOS specific configuration
       if command -v brew >/dev/null 2>&1; then
         export PHP_BUILD_CONFIGURE_OPTS="${PHP_BUILD_CONFIGURE_OPTS:---disable-werror --with-external-pcre --disable-fileinfo --with-bz2=$(brew --prefix bzip2) --with-iconv=$(brew --prefix libiconv)}"
@@ -379,10 +379,10 @@ patch_php_build_definitions() {
         # Find the last patch_file line and add after it
         local last_patch_line
         last_patch_line=$(grep -n "patch_file" "$def_file" | tail -1 | cut -d: -f1)
-        awk -v line="$last_patch_line" 'NR==line {print; print "patch_file \"php-7.4-libxml2-2.12.patch\""} NR!=line' "$def_file" > "$def_file.tmp" && mv "$def_file.tmp" "$def_file"
+        awk -v line="$last_patch_line" 'NR==line {print; print "patch_file \"php-7.4-libxml2-2.12.patch\""} NR!=line' "$def_file" >"$def_file.tmp" && mv "$def_file.tmp" "$def_file"
       else
         # Add before install_package
-        awk '/^install_package/ {print "patch_file \"php-7.4-libxml2-2.12.patch\""; print; next} {print}' "$def_file" > "$def_file.tmp" && mv "$def_file.tmp" "$def_file"
+        awk '/^install_package/ {print "patch_file \"php-7.4-libxml2-2.12.patch\""; print; next} {print}' "$def_file" >"$def_file.tmp" && mv "$def_file.tmp" "$def_file"
       fi
       echo "Added libxml2 compatibility patch to PHP $php_version definition"
     fi
@@ -393,7 +393,7 @@ patch_php_build_definitions() {
       if [ -f "$def_file" ] && ! grep -q "php-7.4-icu-74-compat.patch" "$def_file"; then
         local last_patch_line
         last_patch_line=$(grep -n "patch_file" "$def_file" | tail -1 | cut -d: -f1)
-        awk -v line="$last_patch_line" 'NR==line {print; print "patch_file \"php-7.4-icu-74-compat.patch\""} NR!=line' "$def_file" > "$def_file.tmp" && mv "$def_file.tmp" "$def_file"
+        awk -v line="$last_patch_line" 'NR==line {print; print "patch_file \"php-7.4-icu-74-compat.patch\""} NR!=line' "$def_file" >"$def_file.tmp" && mv "$def_file.tmp" "$def_file"
         echo "Added ICU 74+ compatibility patch to PHP $php_version definition"
       fi
     fi
@@ -405,7 +405,7 @@ patch_php_build_definitions() {
     if [ -f "${PLUGIN_DIR}/patches/php-8.0-libxml2-2.12-compat.patch" ]; then
       cp "${PLUGIN_DIR}/patches/php-8.0-libxml2-2.12-compat.patch" "$php_build_patches/"
       if [ -f "$def_file" ] && ! grep -q "php-8.0-libxml2-2.12-compat.patch" "$def_file"; then
-        awk '/patch_file "php-8.0-support-openssl-3.patch"/ {print; print "patch_file \"php-8.0-libxml2-2.12-compat.patch\""; next} {print}' "$def_file" > "$def_file.tmp" && mv "$def_file.tmp" "$def_file"
+        awk '/patch_file "php-8.0-support-openssl-3.patch"/ {print; print "patch_file \"php-8.0-libxml2-2.12-compat.patch\""; next} {print}' "$def_file" >"$def_file.tmp" && mv "$def_file.tmp" "$def_file"
         echo "Added libxml2 compatibility patch to PHP $php_version definition"
       fi
     fi
@@ -414,7 +414,7 @@ patch_php_build_definitions() {
     if [ -f "${PLUGIN_DIR}/patches/php-8.0-icu-74-compat.patch" ]; then
       cp "${PLUGIN_DIR}/patches/php-8.0-icu-74-compat.patch" "$php_build_patches/"
       if [ -f "$def_file" ] && ! grep -q "php-8.0-icu-74-compat.patch" "$def_file"; then
-        awk '/patch_file "php-8.0-libxml2-2.12-compat.patch"/ {print; print "patch_file \"php-8.0-icu-74-compat.patch\""; next} {print}' "$def_file" > "$def_file.tmp" && mv "$def_file.tmp" "$def_file"
+        awk '/patch_file "php-8.0-libxml2-2.12-compat.patch"/ {print; print "patch_file \"php-8.0-icu-74-compat.patch\""; next} {print}' "$def_file" >"$def_file.tmp" && mv "$def_file.tmp" "$def_file"
         echo "Added ICU 74+ compatibility patch to PHP $php_version definition"
       fi
     fi
