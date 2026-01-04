@@ -30,11 +30,11 @@ check_and_set_openssl_path() {
   if [ "$php_major" -eq 7 ]; then
     needs_openssl1=true
   elif [ "$php_major" -eq 8 ] && [ "$php_minor" -eq 0 ]; then
-    if [ "$php_patch" -lt 20 ]; then
+    if [ "${php_patch:-0}" -lt 20 ]; then
       needs_openssl1=true
     fi
   elif [ "$php_major" -eq 8 ] && [ "$php_minor" -eq 1 ]; then
-    if [ "$php_patch" -lt 6 ]; then
+    if [ "${php_patch:-0}" -lt 6 ]; then
       needs_openssl1=true
     fi
   fi

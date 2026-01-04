@@ -92,15 +92,15 @@ check_openssl_compatibility() {
   if [ "$php_major" -eq 7 ]; then
     needs_openssl1=true
   elif [ "$php_major" -eq 8 ] && [ "$php_minor" -eq 0 ]; then
-    if [ "$php_patch" -lt 20 ]; then
+    if [ "${php_patch:-0}" -lt 20 ]; then
       needs_openssl1=true
       # PHP 8.0.0-8.0.5 have additional compatibility issues
-      if [ "$php_patch" -lt 6 ]; then
+      if [ "${php_patch:-0}" -lt 6 ]; then
         has_other_issues=true
       fi
     fi
   elif [ "$php_major" -eq 8 ] && [ "$php_minor" -eq 1 ]; then
-    if [ "$php_patch" -lt 6 ]; then
+    if [ "${php_patch:-0}" -lt 6 ]; then
       needs_openssl1=true
     fi
   fi
@@ -236,7 +236,7 @@ setup_compiler_for_old_php() {
   php_patch=$(echo "$php_version" | cut -d. -f3 | sed 's/[^0-9].*//')
 
   # Only apply special compiler setup for problematic old versions
-  if ! { [ "$php_major" -eq 7 ] && [ "$php_minor" -eq 4 ]; } && ! { [ "$php_major" -eq 8 ] && [ "$php_minor" -eq 0 ] && [ "$php_patch" -lt 20 ]; }; then
+  if ! { [ "$php_major" -eq 7 ] && [ "$php_minor" -eq 4 ]; } && ! { [ "$php_major" -eq 8 ] && [ "$php_minor" -eq 0 ] && [ "${php_patch:-0}" -lt 20 ]; }; then
     return 0
   fi
 
@@ -291,7 +291,7 @@ setup_compiler_for_old_php() {
     export LDFLAGS="${LDFLAGS:--Wl,--no-as-needed}"
     export PHP_BUILD_CONFIGURE_OPTS="${PHP_BUILD_CONFIGURE_OPTS:---disable-werror --with-external-pcre --disable-fileinfo --without-tidy}"
     export MAKE_OPTS="${MAKE_OPTS:--j1}"
-  elif [ "$php_major" -eq 8 ] && [ "$php_minor" -eq 0 ] && [ "$php_patch" -lt 20 ]; then
+  elif [ "$php_major" -eq 8 ] && [ "$php_minor" -eq 0 ] && [ "${php_patch:-0}" -lt 20 ]; then
     # PHP 8.0.0-8.0.19 specific flags
     export CFLAGS="${CFLAGS:--Wno-error -Wno-deprecated-declarations -Wno-implicit-function-declaration -Wno-stringop-overflow -O0}"
     export CXXFLAGS="${CXXFLAGS:--Wno-error -Wno-deprecated-declarations -O0}"
@@ -376,7 +376,7 @@ patch_php_build_definitions() {
   fi
 
   # Add libxml2 2.12+ and ICU 74+ compatibility patches for PHP 8.0.0-8.0.19
-  if [ "$php_major" -eq 8 ] && [ "$php_minor" -eq 0 ] && [ "$php_patch" -lt 20 ]; then
+  if [ "$php_major" -eq 8 ] && [ "$php_minor" -eq 0 ] && [ "${php_patch:-0}" -lt 20 ]; then
     # libxml2 2.12+ patch
     if [ -f "${PLUGIN_DIR}/patches/php-8.0-libxml2-2.12-compat.patch" ]; then
       cp "${PLUGIN_DIR}/patches/php-8.0-libxml2-2.12-compat.patch" "$php_build_patches/"
@@ -410,7 +410,7 @@ validate_compiler_setup() {
   php_patch=$(echo "$php_version" | cut -d. -f3 | sed 's/[^0-9].*//')
 
   # Only validate for problematic versions
-  if ! { [ "$php_major" -eq 7 ] && [ "$php_minor" -eq 4 ]; } && ! { [ "$php_major" -eq 8 ] && [ "$php_minor" -eq 0 ] && [ "$php_patch" -lt 20 ]; }; then
+  if ! { [ "$php_major" -eq 7 ] && [ "$php_minor" -eq 4 ]; } && ! { [ "$php_major" -eq 8 ] && [ "$php_minor" -eq 0 ] && [ "${php_patch:-0}" -lt 20 ]; }; then
     return 0
   fi
 
@@ -514,7 +514,7 @@ php_major=$(echo "$version" | cut -d. -f1)
 php_minor=$(echo "$version" | cut -d. -f2)
 php_patch=$(echo "$version" | cut -d. -f3 | sed 's/[^0-9].*//')
 
-if { [ "$php_major" -eq 7 ] && [ "$php_minor" -eq 4 ]; } || { [ "$php_major" -eq 8 ] && [ "$php_minor" -eq 0 ] && [ "$php_patch" -lt 20 ]; }; then
+if { [ "$php_major" -eq 7 ] && [ "$php_minor" -eq 4 ]; } || { [ "$php_major" -eq 8 ] && [ "$php_minor" -eq 0 ] && [ "${php_patch:-0}" -lt 20 ]; }; then
   echo "Using environment wrapper for PHP ${version}..."
 
   # Force regenerate autotools cache before build
