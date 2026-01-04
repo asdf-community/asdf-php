@@ -76,18 +76,24 @@ jobs:
             # Set up library paths for configure to find dependencies
             echo "LDFLAGS=-L$(brew --prefix)/lib" >> $GITHUB_ENV
             echo "CPPFLAGS=-I$(brew --prefix)/include" >> $GITHUB_ENV
-            # Debug tidy installation
-            echo "=== Debugging tidy-html5 installation ==="
-            echo "tidy-html5 prefix: $(brew --prefix tidy-html5)"
-            ls -la "$(brew --prefix tidy-html5)/lib" || echo "No lib directory"
-            ls -la "$(brew --prefix tidy-html5)/include" || echo "No include directory"
-            # Try versioned icu4c first, fallback to generic
+            # Set ICU4C prefix once for reuse
             if brew --prefix icu4c@78 >/dev/null 2>&1; then
               ICU_PREFIX="$(brew --prefix icu4c@78)"
             else
               ICU_PREFIX="$(brew --prefix icu4c)"
             fi
+            echo "ICU_PREFIX=$ICU_PREFIX" >> $GITHUB_ENV
             echo "PKG_CONFIG_PATH=$ICU_PREFIX/lib/pkgconfig:$(brew --prefix openssl@3)/lib/pkgconfig:$(brew --prefix libxml2)/lib/pkgconfig:$PKG_CONFIG_PATH" >> $GITHUB_ENV
+
+            # Configure tidy once for reuse
+            TIDY_PREFIX="$(brew --prefix tidy-html5)"
+            if [ -f "$TIDY_PREFIX/lib/libtidy.dylib" ] || [ -f "$TIDY_PREFIX/lib/libtidy.a" ]; then
+              echo "✓ tidy library found, enabling tidy support"
+              echo "TIDY_CONFIG=--with-tidy=$TIDY_PREFIX" >> $GITHUB_ENV
+            else
+              echo "⚠ tidy library not found, disabling tidy support"
+              echo "TIDY_CONFIG=--without-tidy" >> $GITHUB_ENV
+            fi
           fi
 
       - name: Setup asdf
@@ -124,20 +130,7 @@ jobs:
 
             # Add macOS-specific PHP build configure options
             if [ "${{ runner.os }}" = "macOS" ]; then
-              # Try versioned icu4c first, fallback to generic
-              if brew --prefix icu4c@78 >/dev/null 2>&1; then
-                ICU_PREFIX="$(brew --prefix icu4c@78)"
-              else
-                ICU_PREFIX="$(brew --prefix icu4c)"
-              fi
-              # Try to configure tidy if available, otherwise disable it
-              if [ -f "$(brew --prefix tidy-html5)/lib/libtidy.dylib" ] || [ -f "$(brew --prefix tidy-html5)/lib/libtidy.a" ]; then
-                echo "✓ tidy library found, enabling tidy support"
-                echo "PHP_BUILD_CONFIGURE_OPTS=--with-bz2=$(brew --prefix bzip2) --with-iconv=$(brew --prefix libiconv) --with-openssl=$(brew --prefix openssl@3) --with-tidy=$(brew --prefix tidy-html5)" >> $GITHUB_ENV
-              else
-                echo "⚠ tidy library not found, disabling tidy support"
-                echo "PHP_BUILD_CONFIGURE_OPTS=--with-bz2=$(brew --prefix bzip2) --with-iconv=$(brew --prefix libiconv) --with-openssl=$(brew --prefix openssl@3) --without-tidy" >> $GITHUB_ENV
-              fi
+              echo "PHP_BUILD_CONFIGURE_OPTS=--with-bz2=$(brew --prefix bzip2) --with-iconv=$(brew --prefix libiconv) --with-openssl=$(brew --prefix openssl@3) ${{ env.TIDY_CONFIG }}" >> $GITHUB_ENV
             fi
 
             # Debug output
@@ -153,20 +146,7 @@ jobs:
 
             # Add macOS-specific PHP build configure options for modern versions
             if [ "${{ runner.os }}" = "macOS" ]; then
-              # Try versioned icu4c first, fallback to generic
-              if brew --prefix icu4c@78 >/dev/null 2>&1; then
-                ICU_PREFIX="$(brew --prefix icu4c@78)"
-              else
-                ICU_PREFIX="$(brew --prefix icu4c)"
-              fi
-              # Try to configure tidy if available, otherwise disable it
-              if [ -f "$(brew --prefix tidy-html5)/lib/libtidy.dylib" ] || [ -f "$(brew --prefix tidy-html5)/lib/libtidy.a" ]; then
-                echo "✓ tidy library found, enabling tidy support"
-                echo "PHP_BUILD_CONFIGURE_OPTS=--with-bz2=$(brew --prefix bzip2) --with-iconv=$(brew --prefix libiconv) --with-openssl=$(brew --prefix openssl@3) --with-tidy=$(brew --prefix tidy-html5)" >> $GITHUB_ENV
-              else
-                echo "⚠ tidy library not found, disabling tidy support"
-                echo "PHP_BUILD_CONFIGURE_OPTS=--with-bz2=$(brew --prefix bzip2) --with-iconv=$(brew --prefix libiconv) --with-openssl=$(brew --prefix openssl@3) --without-tidy" >> $GITHUB_ENV
-              fi
+              echo "PHP_BUILD_CONFIGURE_OPTS=--with-bz2=$(brew --prefix bzip2) --with-iconv=$(brew --prefix libiconv) --with-openssl=$(brew --prefix openssl@3) ${{ env.TIDY_CONFIG }}" >> $GITHUB_ENV
             fi
           fi
 
