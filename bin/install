@@ -4,6 +4,15 @@ set -eo pipefail
 # Get the plugin root directory
 PLUGIN_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
+# Detect sed -i syntax for cross-platform compatibility
+if [[ "$OSTYPE" == "darwin"* ]]; then
+  # macOS uses BSD sed which requires an empty string argument for in-place editing
+  SED_INPLACE="sed -i ''"
+else
+  # Linux/GNU sed allows -i without argument
+  SED_INPLACE="sed -i"
+fi
+
 # Setup php-build
 PHP_BUILD_ROOT="$PLUGIN_DIR/vendor/php-build"
 
@@ -346,10 +355,10 @@ patch_php_build_definitions() {
         # Find the last patch_file line and add after it
         local last_patch_line
         last_patch_line=$(grep -n "patch_file" "$def_file" | tail -1 | cut -d: -f1)
-        sed -i "${last_patch_line}a patch_file \"php-7.4-libxml2-2.12.patch\"" "$def_file"
+        $SED_INPLACE "${last_patch_line}a patch_file \"php-7.4-libxml2-2.12.patch\"" "$def_file"
       else
         # Add before install_package
-        sed -i '/^install_package/i patch_file "php-7.4-libxml2-2.12.patch"\n' "$def_file"
+        $SED_INPLACE '/^install_package/i patch_file "php-7.4-libxml2-2.12.patch"\n' "$def_file"
       fi
       echo "Added libxml2 compatibility patch to PHP $php_version definition"
     fi
@@ -360,7 +369,7 @@ patch_php_build_definitions() {
       if [ -f "$def_file" ] && ! grep -q "php-7.4-icu-74-compat.patch" "$def_file"; then
         local last_patch_line
         last_patch_line=$(grep -n "patch_file" "$def_file" | tail -1 | cut -d: -f1)
-        sed -i "${last_patch_line}a patch_file \"php-7.4-icu-74-compat.patch\"" "$def_file"
+        $SED_INPLACE "${last_patch_line}a patch_file \"php-7.4-icu-74-compat.patch\"" "$def_file"
         echo "Added ICU 74+ compatibility patch to PHP $php_version definition"
       fi
     fi
@@ -372,7 +381,7 @@ patch_php_build_definitions() {
     if [ -f "${PLUGIN_DIR}/patches/php-8.0-libxml2-2.12-compat.patch" ]; then
       cp "${PLUGIN_DIR}/patches/php-8.0-libxml2-2.12-compat.patch" "$php_build_patches/"
       if [ -f "$def_file" ] && ! grep -q "php-8.0-libxml2-2.12-compat.patch" "$def_file"; then
-        sed -i '/patch_file "php-8.0-support-openssl-3.patch"/a patch_file "php-8.0-libxml2-2.12-compat.patch"' "$def_file"
+        $SED_INPLACE '/patch_file "php-8.0-support-openssl-3.patch"/a patch_file "php-8.0-libxml2-2.12-compat.patch"' "$def_file"
         echo "Added libxml2 compatibility patch to PHP $php_version definition"
       fi
     fi
@@ -381,7 +390,7 @@ patch_php_build_definitions() {
     if [ -f "${PLUGIN_DIR}/patches/php-8.0-icu-74-compat.patch" ]; then
       cp "${PLUGIN_DIR}/patches/php-8.0-icu-74-compat.patch" "$php_build_patches/"
       if [ -f "$def_file" ] && ! grep -q "php-8.0-icu-74-compat.patch" "$def_file"; then
-        sed -i '/patch_file "php-8.0-libxml2-2.12-compat.patch"/a patch_file "php-8.0-icu-74-compat.patch"' "$def_file"
+        $SED_INPLACE '/patch_file "php-8.0-libxml2-2.12-compat.patch"/a patch_file "php-8.0-icu-74-compat.patch"' "$def_file"
         echo "Added ICU 74+ compatibility patch to PHP $php_version definition"
       fi
     fi
