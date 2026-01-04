@@ -43,13 +43,16 @@ jobs:
           - os: macos-latest
             version: 8.3.29
             is_legacy: true
+          - os: macos-latest
+            version: 8.0.0
+            is_legacy: true
           # will uncomment later
           # - os: macos-latest
-          #   version: 8.0.0
-          #   is_legacy: true
-          # - os: ubuntu-latest
           #   version: 7.4.14
           #   is_legacy: true
+          # - os: ubuntu-latest
+          #   version: latest
+          #   is_legacy: false
 
     runs-on: ${{ matrix.os }}
     timeout-minutes: 45
