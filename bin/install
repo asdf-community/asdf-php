@@ -457,7 +457,7 @@ prepare_php_build_environment() {
   local wrapper_script
   wrapper_script=$(mktemp)
 
-  cat >"$wrapper_script" <<'EOF'
+  cat >"$wrapper_script" <<EOF
 #!/bin/bash
 set -eo pipefail
 
@@ -481,23 +481,23 @@ export ac_cv_prog_CC="${ac_cv_prog_CC}"
 export ac_cv_prog_CXX="${ac_cv_prog_CXX}"
 
 # Clear any existing autoconf cache that might interfere
-if [ -n "$AUTOCONF_CACHE_DIR" ]; then
-  rm -rf "$AUTOCONF_CACHE_DIR" 2>/dev/null || true
+if [ -n "\$AUTOCONF_CACHE_DIR" ]; then
+  rm -rf "\$AUTOCONF_CACHE_DIR" 2>/dev/null || true
 fi
 
 # Debug output for troubleshooting
 echo "=== php-build Environment ==="
-echo "CC=$CC"
-echo "CXX=$CXX"
-echo "CFLAGS=$CFLAGS"
-echo "ac_cv_prog_CC=$ac_cv_prog_CC"
-echo "ac_cv_prog_CXX=$ac_cv_prog_CXX"
-echo "CONFIG_SHELL=$CONFIG_SHELL"
-echo "PHP_BUILD_CONFIGURE_OPTS=$PHP_BUILD_CONFIGURE_OPTS"
-echo "MAKE_OPTS=$MAKE_OPTS"
+echo "CC=\$CC"
+echo "CXX=\$CXX"
+echo "CFLAGS=\$CFLAGS"
+echo "ac_cv_prog_CC=\$ac_cv_prog_CC"
+echo "ac_cv_prog_CXX=\$ac_cv_prog_CXX"
+echo "CONFIG_SHELL=\$CONFIG_SHELL"
+echo "PHP_BUILD_CONFIGURE_OPTS=\$PHP_BUILD_CONFIGURE_OPTS"
+echo "MAKE_OPTS=\$MAKE_OPTS"
 
 # Run php-build with all environment preserved
-exec php-build "$@"
+exec php-build "\$@"
 EOF
 
   chmod +x "$wrapper_script"
