@@ -279,15 +279,45 @@ setup_compiler_for_old_php() {
     # PHP 7.4 specific flags
     export CFLAGS="${CFLAGS:--Wno-error -Wno-deprecated-declarations -Wno-implicit-function-declaration -Wno-stringop-overflow -O0}"
     export CXXFLAGS="${CXXFLAGS:--Wno-error -Wno-deprecated-declarations -O0}"
-    export LDFLAGS="${LDFLAGS:--Wl,--no-as-needed}"
-    export PHP_BUILD_CONFIGURE_OPTS="${PHP_BUILD_CONFIGURE_OPTS:---disable-werror --with-external-pcre --disable-fileinfo --without-tidy}"
+
+    # Platform-specific configuration
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+      # macOS specific configuration
+      if command -v brew >/dev/null 2>&1; then
+        export PHP_BUILD_CONFIGURE_OPTS="${PHP_BUILD_CONFIGURE_OPTS:---disable-werror --with-external-pcre --disable-fileinfo --with-bz2=$(brew --prefix bzip2) --with-iconv=$(brew --prefix libiconv)}"
+        # Set library paths for macOS
+        export LDFLAGS="${LDFLAGS:--L$(brew --prefix)/lib}"
+        export CPPFLAGS="${CPPFLAGS:--I$(brew --prefix)/include}"
+      else
+        export PHP_BUILD_CONFIGURE_OPTS="${PHP_BUILD_CONFIGURE_OPTS:---disable-werror --with-external-pcre --disable-fileinfo}"
+      fi
+    else
+      # Linux specific configuration
+      export LDFLAGS="${LDFLAGS:--Wl,--no-as-needed}"
+      export PHP_BUILD_CONFIGURE_OPTS="${PHP_BUILD_CONFIGURE_OPTS:---disable-werror --with-external-pcre --disable-fileinfo --without-tidy}"
+    fi
     export MAKE_OPTS="${MAKE_OPTS:--j1}"
   elif [ "$php_major" -eq 8 ] && [ "$php_minor" -eq 0 ] && [ "${php_patch:-0}" -lt 20 ]; then
     # PHP 8.0.0-8.0.19 specific flags
     export CFLAGS="${CFLAGS:--Wno-error -Wno-deprecated-declarations -Wno-implicit-function-declaration -Wno-stringop-overflow -O0}"
     export CXXFLAGS="${CXXFLAGS:--Wno-error -Wno-deprecated-declarations -O0}"
-    export LDFLAGS="${LDFLAGS:--Wl,--no-as-needed}"
-    export PHP_BUILD_CONFIGURE_OPTS="${PHP_BUILD_CONFIGURE_OPTS:---disable-werror --with-external-pcre --disable-fileinfo --without-tidy}"
+
+    # Platform-specific configuration
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+      # macOS specific configuration
+      if command -v brew >/dev/null 2>&1; then
+        export PHP_BUILD_CONFIGURE_OPTS="${PHP_BUILD_CONFIGURE_OPTS:---disable-werror --with-external-pcre --disable-fileinfo --with-bz2=$(brew --prefix bzip2) --with-iconv=$(brew --prefix libiconv)}"
+        # Set library paths for macOS
+        export LDFLAGS="${LDFLAGS:--L$(brew --prefix)/lib}"
+        export CPPFLAGS="${CPPFLAGS:--I$(brew --prefix)/include}"
+      else
+        export PHP_BUILD_CONFIGURE_OPTS="${PHP_BUILD_CONFIGURE_OPTS:---disable-werror --with-external-pcre --disable-fileinfo}"
+      fi
+    else
+      # Linux specific configuration
+      export LDFLAGS="${LDFLAGS:--Wl,--no-as-needed}"
+      export PHP_BUILD_CONFIGURE_OPTS="${PHP_BUILD_CONFIGURE_OPTS:---disable-werror --with-external-pcre --disable-fileinfo --without-tidy}"
+    fi
     export MAKE_OPTS="${MAKE_OPTS:--j1}"
   fi
 
