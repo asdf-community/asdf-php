@@ -82,6 +82,9 @@ install_php() {
     # Target is OS-specific
     # target=$(get_target)
 
+    # libxml patch
+    patch_libxml "$install_type" "$version" '/usr/lib'
+
     # Build PHP
     echo "Running buildconfig..."
     ./buildconf --force || exit 1
@@ -407,6 +410,38 @@ get_php_version() {
   else
     echo "${version_info[0]}-${version_info[1]}"
   fi
+}
+
+patch_libxml() {
+  # arguments
+  local install_type=$1
+  local version=$2
+  local libxml_path=$3
+  local kernel="$(uname -s)"
+  local libxml_minor_ver=''
+  local download_url='https://github.com/php/php-src/commit/'
+  local commit_hashes=(
+    '8a95e616b91ac0eeedba90a61e36e652919763f2'
+    '0a39890c967aa57225bb6bdf4821aff7a3a3c082'
+  )
+
+  # os check (exclude macOS)
+  [[ ! "$kernel" =~ "Darwin" ]] || return
+
+  # php8.1 version check
+  $(echo "$version" |grep -q "^8.1") || return
+
+  # libxml2.12.x version check
+  [ -f "${libxml_path}/libxml2.so.2" ] || return
+  libxml_minor_ver=$(ls ${libxml_path}/libxml2.so.2.*|cut -d'.' -f4)
+  [ $libxml_minor_ver -gt 12 ] || return
+
+  # download patch and apply it
+  echo "Applying libxml2 patch..."
+  for commit_hash in ${commit_hashes[*]}; do
+    curl -Lo "${commit_hash}.patch" "${download_url}/${commit_hash}.patch"
+    patch -p1 < "${commit_hash}.patch"
+  done
 }
 
 install_php "$ASDF_INSTALL_TYPE" "$ASDF_INSTALL_VERSION" "$ASDF_INSTALL_PATH"
