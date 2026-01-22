@@ -72,6 +72,8 @@ asdf reshim
 php-cs-fixer --version
 ```
 
+You can skip installing composer by prefixing your install command with `PHP_INSTALL_COMPOSER=no`.
+
 ## License
 
 Licensed under the
