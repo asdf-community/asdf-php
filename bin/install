@@ -159,6 +159,12 @@ construct_configure_options() {
     local configure_options="$PHP_CONFIGURE_OPTIONS $global_config"
   fi
 
+  if [ "${PHP_WITH_GMP:-no}" != "no" ]; then
+    configure_options="$configure_options --with-gmp"
+  else
+    configure_options="$configure_options --without-gmp"
+  fi
+
   if [ "${PHP_WITHOUT_PEAR:-no}" != "no" ]; then
     configure_options="$configure_options --without-pear"
   else
