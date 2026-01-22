@@ -144,6 +144,7 @@ construct_configure_options() {
     --with-fpm-group=www-data \
     --with-fpm-user=www-data \
     --with-gd \
+    --with-xsl \
     --with-mhash \
     --with-mysql=mysqlnd \
     --with-mysqli=mysqlnd \
