@@ -104,6 +104,13 @@ setup_macos_dependencies() {
   bzip2_prefix=$(resolve_brew_package_prefix bzip2)
   local iconv_prefix
   iconv_prefix=$(resolve_brew_package_prefix libiconv)
+  local tidy_prefix
+  tidy_prefix=$(resolve_brew_package_prefix tidy-html5)
+
+  # Configure tidy-html5 if available (guard against duplication when already set by CI/env)
+  if [ -n "$tidy_prefix" ] && [ -d "$tidy_prefix" ]; then
+    export PHP_BUILD_CONFIGURE_OPTS="${PHP_BUILD_CONFIGURE_OPTS} --with-tidy=${tidy_prefix}"
+  fi
 
   # Configure bzip2 if available (guard against duplication when already set by CI/env)
   if [ -n "$bzip2_prefix" ] && [ -d "$bzip2_prefix" ]; then
