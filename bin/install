@@ -660,6 +660,16 @@ patch_php_build_definitions() {
         echo "Added bcmath K&R to ANSI C patch to PHP $php_version definition"
       fi
     fi
+
+    # gd function pointer types patch
+    if [ -f "${PLUGIN_DIR}/patches/php-8.0-gd-function-pointer-types.patch" ]; then
+      cp "${PLUGIN_DIR}/patches/php-8.0-gd-function-pointer-types.patch" "$php_build_patches/"
+      if [ -f "$def_file" ] && ! grep -q "php-8.0-gd-function-pointer-types.patch" "$def_file"; then
+        awk '/patch_file "php-8.0-bcmath-knr-to-ansi.patch"/ {print; print "patch_file \"php-8.0-gd-function-pointer-types.patch\""; next} {print}' \
+          "$def_file" >"$def_file.tmp" && mv "$def_file.tmp" "$def_file"
+        echo "Added GD function pointer types patch to PHP $php_version definition"
+      fi
+    fi
   fi
 }
 
