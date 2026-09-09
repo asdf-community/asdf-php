@@ -690,6 +690,16 @@ patch_php_build_definitions() {
         echo "Added pcntl function pointer type patch to PHP $php_version definition"
       fi
     fi
+
+    # scanf function pointer call patch
+    if [ -f "${PLUGIN_DIR}/patches/php-8.0-scanf-function-pointer-call.patch" ]; then
+      cp "${PLUGIN_DIR}/patches/php-8.0-scanf-function-pointer-call.patch" "$php_build_patches/"
+      if [ -f "$def_file" ] && ! grep -q "php-8.0-scanf-function-pointer-call.patch" "$def_file"; then
+        awk '/patch_file "php-8.0-pcntl-function-pointer-type.patch"/ {print; print "patch_file \"php-8.0-scanf-function-pointer-call.patch\""; next} {print}' \
+          "$def_file" >"$def_file.tmp" && mv "$def_file.tmp" "$def_file"
+        echo "Added scanf function pointer call patch to PHP $php_version definition"
+      fi
+    fi
   fi
 }
 
