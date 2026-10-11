@@ -598,6 +598,17 @@ patch_php_build_definitions() {
         echo "Added ICU 74+ compatibility patch to PHP $php_version definition"
       fi
     fi
+
+    # libxml2 ATTRIBUTE_UNUSED patch
+    if [ -f "${PLUGIN_DIR}/patches/php-7.4-libxml2-attribute-unused.patch" ]; then
+      cp "${PLUGIN_DIR}/patches/php-7.4-libxml2-attribute-unused.patch" "$php_build_patches/"
+      if [ -f "$def_file" ] && ! grep -q "php-7.4-libxml2-attribute-unused.patch" "$def_file"; then
+        local last_patch_line
+        last_patch_line=$(grep -n "patch_file" "$def_file" | tail -1 | cut -d: -f1)
+        awk -v line="$last_patch_line" 'NR==line {print; print "patch_file \"php-7.4-libxml2-attribute-unused.patch\""} NR!=line' "$def_file" >"$def_file.tmp" && mv "$def_file.tmp" "$def_file"
+        echo "Added libxml2 ATTRIBUTE_UNUSED patch to PHP $php_version definition"
+      fi
+    fi
   fi
 
   # Add libxml2 2.12+ and ICU 74+ compatibility patches for PHP 8.0.0-8.0.19
