@@ -433,6 +433,11 @@ setup_compiler_for_old_php() {
     # Platform-specific configuration
     if [[ $OSTYPE == "darwin"* ]]; then
       # macOS specific configuration (bzip2/iconv already configured by setup_macos_dependencies)
+      # dns.c needs the res_9_* resolver symbols, which only libresolv provides
+      if [[ ${LDFLAGS:-} != *"-lresolv"* ]]; then
+        export LDFLAGS="${LDFLAGS:+${LDFLAGS} }-lresolv"
+      fi
+
       if command -v brew >/dev/null 2>&1; then
         export PHP_BUILD_CONFIGURE_OPTS="${PHP_BUILD_CONFIGURE_OPTS} --disable-werror --with-external-pcre --disable-fileinfo"
         # Library paths already set by setup_macos_dependencies
