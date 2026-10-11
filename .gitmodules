@@ -1,0 +1,3 @@
+[submodule "vendor/php-build"]
+	path = vendor/php-build
+	url = https://github.com/php-build/php-build.git

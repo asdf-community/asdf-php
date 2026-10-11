@@ -1,0 +1,11 @@
+--- a/ext/libxml/libxml.c	2026-06-28 19:02:27
++++ b/ext/libxml/libxml.c	2026-06-28 19:02:27
+@@ -947,7 +947,7 @@
+ 	ZEND_PARSE_PARAMETERS_END();
+ 
+ 	current_handler = xmlStructuredError;
+-	if (current_handler && current_handler == php_libxml_structured_error_handler) {
++	if (current_handler && current_handler == (xmlStructuredErrorFunc)php_libxml_structured_error_handler) {
+ 		retval = 1;
+ 	} else {
+ 		retval = 0;

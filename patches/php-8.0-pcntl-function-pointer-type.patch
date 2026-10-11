@@ -1,0 +1,11 @@
+--- a/ext/pcntl/pcntl.c	2026-09-09 06:46:34
++++ b/ext/pcntl/pcntl.c	2026-09-09 06:47:18
+@@ -424,7 +424,7 @@
+ 
+ PHP_RINIT_FUNCTION(pcntl)
+ {
+-	php_add_tick_function(pcntl_signal_dispatch, NULL);
++	php_add_tick_function((void (*)(int, void *))pcntl_signal_dispatch, NULL);
+ 	zend_hash_init(&PCNTL_G(php_signal_table), 16, NULL, ZVAL_PTR_DTOR, 0);
+ 	PCNTL_G(head) = PCNTL_G(tail) = PCNTL_G(spares) = NULL;
+ 	PCNTL_G(async_signals) = 0;

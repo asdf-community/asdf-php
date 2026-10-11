@@ -1,0 +1,11 @@
+--- a/ext/standard/scanf.c	2026-09-09 07:30:11
++++ b/ext/standard/scanf.c	2026-09-09 07:30:54
+@@ -1031,7 +1031,7 @@
+ 				 */
+ 				if (!(flags & SCAN_SUPPRESS)) {
+ 					*end = '\0';
+-					value = (zend_long) (*fn)(buf, NULL, base);
++					value = (zend_long) ((long long (*)(const char *, char **, int))fn)(buf, NULL, base);
+ 					if ((flags & SCAN_UNSIGNED) && (value < 0)) {
+ 						snprintf(buf, sizeof(buf), ZEND_ULONG_FMT, value); /* INTL: ISO digit */
+ 						if (numVars && objIndex >= argCount) {

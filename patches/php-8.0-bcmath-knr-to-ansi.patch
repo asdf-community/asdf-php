@@ -1,0 +1,258 @@
+diff --color -ru src.orig/add.c src/add.c
+--- a/ext/bcmath/libbcmath/src/add.c	2026-06-29 00:18:40
++++ b/ext/bcmath/libbcmath/src/add.c	2026-06-29 00:35:32
+@@ -43,9 +43,7 @@
+    is the minimum scale for the result. */
+ 
+ void
+-bc_add (n1, n2, result, scale_min)
+-     bc_num n1, n2, *result;
+-     int scale_min;
++bc_add (bc_num n1, bc_num n2, bc_num *result, int scale_min)
+ {
+   bc_num sum = NULL;
+   int cmp_res;
+diff --color -ru src.orig/compare.c src/compare.c
+--- a/ext/bcmath/libbcmath/src/compare.c	2026-06-29 00:18:40
++++ b/ext/bcmath/libbcmath/src/compare.c	2026-06-29 00:27:13
+@@ -43,10 +43,7 @@
+    compare the magnitudes. */
+ 
+  int
+-_bc_do_compare (n1, n2, use_sign, ignore_last)
+-     bc_num n1, n2;
+-     int use_sign;
+-     int ignore_last;
++_bc_do_compare (bc_num n1, bc_num n2, int use_sign, int ignore_last)
+ {
+   char *n1ptr, *n2ptr;
+   int  count;
+@@ -152,8 +149,7 @@
+ /* This is the "user callable" routine to compare numbers N1 and N2. */
+ 
+ int
+-bc_compare (n1, n2)
+-     bc_num n1, n2;
++bc_compare (bc_num n1, bc_num n2)
+ {
+   return _bc_do_compare (n1, n2, TRUE, FALSE);
+ }
+diff --color -ru src.orig/debug.c src/debug.c
+--- a/ext/bcmath/libbcmath/src/debug.c	2026-06-29 00:18:40
++++ b/ext/bcmath/libbcmath/src/debug.c	2026-06-29 00:35:09
+@@ -56,10 +56,7 @@
+ 
+ /* pv prints a character array as if it was a string of bcd digits. */
+ void
+-pv (name, num, len)
+-     char *name;
+-     unsigned char *num;
+-     int len;
++pv (char *name, unsigned char *num, int len)
+ {
+   int i;
+   printf ("%s=", name);
+diff --color -ru src.orig/div.c src/div.c
+--- a/ext/bcmath/libbcmath/src/div.c	2026-06-29 00:18:40
++++ b/ext/bcmath/libbcmath/src/div.c	2026-06-29 00:29:09
+@@ -44,10 +44,7 @@
+    the same pointers.  */
+ 
+ static void
+-_one_mult (num, size, digit, result)
+-     unsigned char *num;
+-     int size, digit;
+-     unsigned char *result;
++_one_mult (unsigned char *num, int size, int digit, unsigned char *result)
+ {
+   int carry, value;
+   unsigned char *nptr, *rptr;
+diff --color -ru src.orig/doaddsub.c src/doaddsub.c
+--- a/ext/bcmath/libbcmath/src/doaddsub.c	2026-06-29 00:18:40
++++ b/ext/bcmath/libbcmath/src/doaddsub.c	2026-06-29 00:35:37
+@@ -43,9 +43,7 @@
+    SCALE_MIN is to set the minimum scale of the result. */
+ 
+  bc_num
+-_bc_do_add (n1, n2, scale_min)
+-     bc_num n1, n2;
+-     int scale_min;
++_bc_do_add (bc_num n1, bc_num n2, int scale_min)
+ {
+   bc_num sum;
+   int sum_scale, sum_digits;
+@@ -135,9 +133,7 @@
+    of the result. */
+ 
+  bc_num
+-_bc_do_sub (n1, n2, scale_min)
+-     bc_num n1, n2;
+-     int scale_min;
++_bc_do_sub (bc_num n1, bc_num n2, int scale_min)
+ {
+   bc_num diff;
+   int diff_scale, diff_len;
+diff --color -ru src.orig/init.c src/init.c
+--- a/ext/bcmath/libbcmath/src/init.c	2026-06-29 00:18:40
++++ b/ext/bcmath/libbcmath/src/init.c	2026-06-29 00:51:54
+@@ -40,8 +40,7 @@
+ /* new_num allocates a number and sets fields to known values. */
+ 
+ bc_num
+-_bc_new_num_ex (length, scale, persistent)
+-     int length, scale, persistent;
++_bc_new_num_ex (int length, int scale, int persistent)
+ {
+   bc_num temp;
+   /* PHP Change:  malloc() -> pemalloc(), removed free_list code */
+@@ -62,9 +61,7 @@
+    frees the storage if reference count is zero. */
+ 
+ void
+-_bc_free_num_ex (num, persistent)
+-    bc_num *num;
+-    int persistent;
++_bc_free_num_ex (bc_num *num, int persistent)
+ {
+   if (*num == NULL) return;
+   (*num)->n_refs--;
+diff --color -ru src.orig/int2num.c src/int2num.c
+--- a/ext/bcmath/libbcmath/src/int2num.c	2026-06-29 00:18:40
++++ b/ext/bcmath/libbcmath/src/int2num.c	2026-06-29 00:28:19
+@@ -41,9 +41,7 @@
+ /* Convert an integer VAL to a bc number NUM. */
+ 
+ void
+-bc_int2num (num, val)
+-     bc_num *num;
+-     int val;
++bc_int2num (bc_num *num, int val)
+ {
+   char buffer[30];
+   char *bptr, *vptr;
+diff --color -ru src.orig/nearzero.c src/nearzero.c
+--- a/ext/bcmath/libbcmath/src/nearzero.c	2026-06-29 00:18:40
++++ b/ext/bcmath/libbcmath/src/nearzero.c	2026-06-29 00:35:19
+@@ -42,9 +42,7 @@
+    Last digit is defined by scale. */
+ 
+ char
+-bc_is_near_zero (num, scale)
+-     bc_num num;
+-     int scale;
++bc_is_near_zero (bc_num num, int scale)
+ {
+   int  count;
+   char *nptr;
+diff --color -ru src.orig/neg.c src/neg.c
+--- a/ext/bcmath/libbcmath/src/neg.c	2026-06-29 00:18:40
++++ b/ext/bcmath/libbcmath/src/neg.c	2026-06-29 00:28:32
+@@ -40,8 +40,7 @@
+ /* In some places we need to check if the number is negative. */
+ 
+ char
+-bc_is_neg (num)
+-     bc_num num;
++bc_is_neg (bc_num num)
+ {
+   return num->n_sign == MINUS;
+ }
+diff --color -ru src.orig/num2long.c src/num2long.c
+--- a/ext/bcmath/libbcmath/src/num2long.c	2026-06-29 00:18:40
++++ b/ext/bcmath/libbcmath/src/num2long.c	2026-06-29 00:35:20
+@@ -43,8 +43,7 @@
+    the NUM for zero after having a zero returned. */
+ 
+ long
+-bc_num2long (num)
+-     bc_num num;
++bc_num2long (bc_num num)
+ {
+   long val;
+   char *nptr;
+diff --color -ru src.orig/num2str.c src/num2str.c
+--- a/ext/bcmath/libbcmath/src/num2str.c	2026-06-29 00:18:40
++++ b/ext/bcmath/libbcmath/src/num2str.c	2026-06-29 01:11:17
+@@ -40,9 +40,7 @@
+ /* Convert a numbers to a string.  Base 10 only.*/
+ 
+ zend_string
+-*bc_num2str_ex (num, scale)
+-      bc_num num;
+-	  int scale;
++*bc_num2str_ex (bc_num num, int scale)
+ {
+ 	zend_string *str;
+ 	char *sptr;
+diff --color -ru src.orig/output.c src/output.c
+--- a/ext/bcmath/libbcmath/src/output.c	2026-06-29 00:18:40
++++ b/ext/bcmath/libbcmath/src/output.c	2026-06-29 00:35:45
+@@ -57,14 +57,7 @@
+    is the actual routine for writing the characters. */
+ 
+ void
+-bc_out_long (val, size, space, out_char)
+-     long val;
+-     int size, space;
+-#ifdef __STDC__
+-     void (*out_char)(int);
+-#else
+-     void (*out_char)();
+-#endif
++bc_out_long (long val, int size, int space, void (*out_char)(int))
+ {
+   char digits[40];
+   int len, ix;
+@@ -85,11 +78,7 @@
+    as the routine to do the actual output of the characters. */
+ 
+ void
+-#ifdef __STDC__
+ bc_out_num (bc_num num, int o_base, void (*out_char)(int), int leading_zero)
+-#else
+-bc_out_num (bc_num num, int o_base, void (*out_char)(), int leading_zero)
+-#endif
+ {
+   char *nptr;
+   int  index, fdigit, pre_space;
+diff --color -ru src.orig/recmul.c src/recmul.c
+--- a/ext/bcmath/libbcmath/src/recmul.c	2026-06-29 00:18:40
++++ b/ext/bcmath/libbcmath/src/recmul.c	2026-06-29 00:35:21
+@@ -51,9 +51,7 @@
+ /* Multiply utility routines */
+ 
+ static bc_num
+-new_sub_num (length, scale, value)
+-     int length, scale;
+-     char *value;
++new_sub_num (int length, int scale, char *value)
+ {
+   bc_num temp;
+ 
+diff --color -ru src.orig/rmzero.c src/rmzero.c
+--- a/ext/bcmath/libbcmath/src/rmzero.c	2026-06-29 00:18:40
++++ b/ext/bcmath/libbcmath/src/rmzero.c	2026-06-29 00:23:18
+@@ -42,8 +42,7 @@
+    correct place and adjusts the length. */
+ 
+  void
+-_bc_rm_leading_zeros (num)
+-     bc_num num;
++_bc_rm_leading_zeros (bc_num num)
+ {
+   /* We can move n_value to point to the first non zero digit! */
+   while (*num->n_value == 0 && num->n_len > 1) {
+diff --color -ru src.orig/sub.c src/sub.c
+--- a/ext/bcmath/libbcmath/src/sub.c	2026-06-29 00:18:40
++++ b/ext/bcmath/libbcmath/src/sub.c	2026-06-29 00:35:33
+@@ -43,9 +43,7 @@
+    is the minimum scale for the result. */
+ 
+ void
+-bc_sub (n1, n2, result, scale_min)
+-     bc_num n1, n2, *result;
+-     int scale_min;
++bc_sub (bc_num n1, bc_num n2, bc_num *result, int scale_min)
+ {
+   bc_num diff = NULL;
+   int cmp_res;
