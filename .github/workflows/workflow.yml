@@ -28,6 +28,7 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          # Ubuntu
           - os: ubuntu-latest
             version: 8.0.0
             is_legacy: true
@@ -38,8 +39,9 @@ jobs:
             version: 7.4.14
             is_legacy: true
           - os: ubuntu-latest
-            version: latest
-            is_legacy: false
+            version: 8.5.11
+            is_legacy: true
+          # MacOS
           - os: macos-latest
             version: 8.3.29
             is_legacy: true
@@ -49,6 +51,10 @@ jobs:
           - os: macos-latest
             version: 7.4.14
             is_legacy: true
+          - os: macos-latest
+            version: 8.5.11
+            is_legacy: true
+          # Latest
           - os: ubuntu-latest
             version: latest
             is_legacy: false
