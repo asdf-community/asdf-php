@@ -664,6 +664,17 @@ patch_php_build_definitions() {
         echo "Added sha1 K&R to ANSI patch to PHP $php_version definition"
       fi
     fi
+
+    # gd function pointer types patch (PHP 7.4)
+    if [ -f "${PLUGIN_DIR}/patches/php-7.4-gd-function-pointer-types.patch" ]; then
+      cp "${PLUGIN_DIR}/patches/php-7.4-gd-function-pointer-types.patch" "$php_build_patches/"
+      if [ -f "$def_file" ] && ! grep -q "php-7.4-gd-function-pointer-types.patch" "$def_file"; then
+        local last_patch_line
+        last_patch_line=$(grep -n "patch_file" "$def_file" | tail -1 | cut -d: -f1)
+        awk -v line="$last_patch_line" 'NR==line {print; print "patch_file \"php-7.4-gd-function-pointer-types.patch\""} NR!=line' "$def_file" >"$def_file.tmp" && mv "$def_file.tmp" "$def_file"
+        echo "Added gd function pointer types patch to PHP $php_version definition"
+      fi
+    fi
   fi
 
   # Add libxml2 2.12+ and ICU 74+ compatibility patches for PHP 8.0.0-8.0.19
