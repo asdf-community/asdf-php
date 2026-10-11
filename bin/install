@@ -700,6 +700,16 @@ patch_php_build_definitions() {
         echo "Added scanf function pointer call patch to PHP $php_version definition"
       fi
     fi
+
+    # sha1 K&R to ANSI patch
+    if [ -f "${PLUGIN_DIR}/patches/php-8.0-sha1-knr-to-ansi.patch" ]; then
+      cp "${PLUGIN_DIR}/patches/php-8.0-sha1-knr-to-ansi.patch" "$php_build_patches/"
+      if [ -f "$def_file" ] && ! grep -q "php-8.0-sha1-knr-to-ansi.patch" "$def_file"; then
+        awk '/patch_file "php-8.0-scanf-function-pointer-call.patch"/ {print; print "patch_file \"php-8.0-sha1-knr-to-ansi.patch\""; next} {print}' \
+          "$def_file" >"$def_file.tmp" && mv "$def_file.tmp" "$def_file"
+        echo "Added sha1 K&R to ANSI patch to PHP $php_version definition"
+      fi
+    fi
   fi
 }
 
