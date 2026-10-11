@@ -609,6 +609,61 @@ patch_php_build_definitions() {
         echo "Added libxml2 ATTRIBUTE_UNUSED patch to PHP $php_version definition"
       fi
     fi
+
+    # bcmath K&R to ANSI patch (shared with 8.0)
+    if [ -f "${PLUGIN_DIR}/patches/php-8.0-bcmath-knr-to-ansi.patch" ]; then
+      cp "${PLUGIN_DIR}/patches/php-8.0-bcmath-knr-to-ansi.patch" "$php_build_patches/"
+      if [ -f "$def_file" ] && ! grep -q "php-8.0-bcmath-knr-to-ansi.patch" "$def_file"; then
+        local last_patch_line
+        last_patch_line=$(grep -n "patch_file" "$def_file" | tail -1 | cut -d: -f1)
+        awk -v line="$last_patch_line" 'NR==line {print; print "patch_file \"php-8.0-bcmath-knr-to-ansi.patch\""} NR!=line' "$def_file" >"$def_file.tmp" && mv "$def_file.tmp" "$def_file"
+        echo "Added bcmath K&R to ANSI patch to PHP $php_version definition"
+      fi
+    fi
+
+    # intl K&R to ANSI patch (shared with 8.0)
+    if [ -f "${PLUGIN_DIR}/patches/php-8.0-intl-knr-to-ansi.patch" ]; then
+      cp "${PLUGIN_DIR}/patches/php-8.0-intl-knr-to-ansi.patch" "$php_build_patches/"
+      if [ -f "$def_file" ] && ! grep -q "php-8.0-intl-knr-to-ansi.patch" "$def_file"; then
+        local last_patch_line
+        last_patch_line=$(grep -n "patch_file" "$def_file" | tail -1 | cut -d: -f1)
+        awk -v line="$last_patch_line" 'NR==line {print; print "patch_file \"php-8.0-intl-knr-to-ansi.patch\""} NR!=line' "$def_file" >"$def_file.tmp" && mv "$def_file.tmp" "$def_file"
+        echo "Added intl K&R to ANSI patch to PHP $php_version definition"
+      fi
+    fi
+
+    # pcntl function pointer type patch (shared with 8.0)
+    if [ -f "${PLUGIN_DIR}/patches/php-8.0-pcntl-function-pointer-type.patch" ]; then
+      cp "${PLUGIN_DIR}/patches/php-8.0-pcntl-function-pointer-type.patch" "$php_build_patches/"
+      if [ -f "$def_file" ] && ! grep -q "php-8.0-pcntl-function-pointer-type.patch" "$def_file"; then
+        local last_patch_line
+        last_patch_line=$(grep -n "patch_file" "$def_file" | tail -1 | cut -d: -f1)
+        awk -v line="$last_patch_line" 'NR==line {print; print "patch_file \"php-8.0-pcntl-function-pointer-type.patch\""} NR!=line' "$def_file" >"$def_file.tmp" && mv "$def_file.tmp" "$def_file"
+        echo "Added pcntl function pointer type patch to PHP $php_version definition"
+      fi
+    fi
+
+    # scanf function pointer call patch (shared with 8.0)
+    if [ -f "${PLUGIN_DIR}/patches/php-8.0-scanf-function-pointer-call.patch" ]; then
+      cp "${PLUGIN_DIR}/patches/php-8.0-scanf-function-pointer-call.patch" "$php_build_patches/"
+      if [ -f "$def_file" ] && ! grep -q "php-8.0-scanf-function-pointer-call.patch" "$def_file"; then
+        local last_patch_line
+        last_patch_line=$(grep -n "patch_file" "$def_file" | tail -1 | cut -d: -f1)
+        awk -v line="$last_patch_line" 'NR==line {print; print "patch_file \"php-8.0-scanf-function-pointer-call.patch\""} NR!=line' "$def_file" >"$def_file.tmp" && mv "$def_file.tmp" "$def_file"
+        echo "Added scanf function pointer call patch to PHP $php_version definition"
+      fi
+    fi
+
+    # sha1 K&R to ANSI patch (shared with 8.0)
+    if [ -f "${PLUGIN_DIR}/patches/php-8.0-sha1-knr-to-ansi.patch" ]; then
+      cp "${PLUGIN_DIR}/patches/php-8.0-sha1-knr-to-ansi.patch" "$php_build_patches/"
+      if [ -f "$def_file" ] && ! grep -q "php-8.0-sha1-knr-to-ansi.patch" "$def_file"; then
+        local last_patch_line
+        last_patch_line=$(grep -n "patch_file" "$def_file" | tail -1 | cut -d: -f1)
+        awk -v line="$last_patch_line" 'NR==line {print; print "patch_file \"php-8.0-sha1-knr-to-ansi.patch\""} NR!=line' "$def_file" >"$def_file.tmp" && mv "$def_file.tmp" "$def_file"
+        echo "Added sha1 K&R to ANSI patch to PHP $php_version definition"
+      fi
+    fi
   fi
 
   # Add libxml2 2.12+ and ICU 74+ compatibility patches for PHP 8.0.0-8.0.19
