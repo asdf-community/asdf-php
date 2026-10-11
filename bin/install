@@ -536,7 +536,7 @@ setup_compiler_for_old_php() {
 # Apply compiler setup for problematic PHP versions
 setup_compiler_for_old_php "$version"
 
-# Disable Xdebug by default (prevents build failures)
+# Leave Xdebug disabled in xdebug.ini by default (the extension is still built)
 if [ -z "$PHP_BUILD_XDEBUG_ENABLE" ]; then
   export PHP_BUILD_XDEBUG_ENABLE=off
 fi
@@ -679,6 +679,12 @@ patch_php_build_definitions() {
         awk -v line="$last_patch_line" 'NR==line {print; print "patch_file \"php-7.4-gd-function-pointer-types.patch\""} NR!=line' "$def_file" >"$def_file.tmp" && mv "$def_file.tmp" "$def_file"
         echo "Added gd function pointer types patch to PHP $php_version definition"
       fi
+    fi
+
+    # xdebug 3.1.6 does not compile with Clang 17 on macOS (empty-parameter declaration)
+    if [[ $OSTYPE == "darwin"* ]] && [ -f "$def_file" ] && grep -q '^install_xdebug ' "$def_file"; then
+      awk '!/^install_xdebug /' "$def_file" >"$def_file.tmp" && mv "$def_file.tmp" "$def_file"
+      echo "Skipping xdebug for PHP $php_version on macOS (xdebug 3.1.6 does not compile with Clang 17)"
     fi
   fi
 

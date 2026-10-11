@@ -109,13 +109,15 @@ export PHP_BUILD_CONFIGURE_OPTS="--with-openssl=/path/to/openssl-1.1"
 # Disable PEAR installation
 export PHP_WITHOUT_PEAR=yes
 
-# Disable Xdebug during build
+# Leave Xdebug disabled in xdebug.ini (the extension is still built)
 export PHP_BUILD_XDEBUG_ENABLE=off
 
 # Custom compiler flags
 export CFLAGS="-Wno-error -O2"
 export CXXFLAGS="-Wno-error -O2"
 ```
+
+PHP 7.4 on macOS is built without Xdebug, because Xdebug 3.1.6 does not compile with the macOS toolchain.
 
 ## Extensions and Composer
 
