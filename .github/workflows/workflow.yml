@@ -30,26 +30,26 @@ jobs:
         include:
           # Ubuntu
           - os: ubuntu-latest
+            version: 7.4.14
+            is_legacy: true
+          - os: ubuntu-latest
             version: 8.0.0
             is_legacy: true
           - os: ubuntu-latest
             version: 8.3.29
-            is_legacy: true
-          - os: ubuntu-latest
-            version: 7.4.14
             is_legacy: true
           - os: ubuntu-latest
             version: 8.5.11
             is_legacy: true
           # MacOS
           - os: macos-latest
-            version: 8.3.29
+            version: 7.4.14
             is_legacy: true
           - os: macos-latest
             version: 8.0.0
             is_legacy: true
           - os: macos-latest
-            version: 7.4.14
+            version: 8.3.29
             is_legacy: true
           - os: macos-latest
             version: 8.5.11
