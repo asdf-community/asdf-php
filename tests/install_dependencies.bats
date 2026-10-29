@@ -28,6 +28,8 @@ if [ "\$1" = "--prefix" ]; then
     echo "${TEST_TEMP_DIR}/opt/bzip2"
   elif [ "\$2" = "libiconv" ]; then
     echo "${TEST_TEMP_DIR}/opt/libiconv"
+    elif [ "\$2" = "tidy-html5" ]; then
+      echo "${TEST_TEMP_DIR}/opt/tidy-html5"
   else
     echo "${TEST_TEMP_DIR}/opt"
   fi
@@ -85,6 +87,55 @@ teardown() {
   [[ "${PHP_BUILD_CONFIGURE_OPTS}" == *"--with-iconv=${TEST_TEMP_DIR}/opt/libiconv"* ]]
 }
 
+@test "should disable tidy on macOS when tidy-html5 is absent" {
+  export OSTYPE="darwin23.0"
+
+  setup_macos_dependencies "8.5.4"
+
+  [[ "${PHP_BUILD_CONFIGURE_OPTS}" == *"--without-tidy"* ]]
+}
+
+@test "should enable tidy on macOS when tidy-html5 is installed" {
+  export OSTYPE="darwin23.0"
+  mkdir -p "${TEST_TEMP_DIR}/opt/tidy-html5"
+
+  setup_macos_dependencies "8.5.4"
+
+  [[ "${PHP_BUILD_CONFIGURE_OPTS}" == *"--with-tidy=${TEST_TEMP_DIR}/opt/tidy-html5"* ]]
+  [[ "${PHP_BUILD_CONFIGURE_OPTS}" != *"--without-tidy"* ]]
+}
+
+@test "should leave tidy options unchanged on Linux" {
+  export OSTYPE="linux-gnu"
+  export PHP_BUILD_CONFIGURE_OPTS="--enable-mbstring"
+
+  setup_macos_dependencies "8.5.4"
+
+  [ "${PHP_BUILD_CONFIGURE_OPTS}" = "--enable-mbstring" ]
+}
+
+@test "should preserve explicit tidy options from PHP_BUILD_CONFIGURE_OPTS" {
+  export OSTYPE="darwin23.0"
+  export PHP_BUILD_CONFIGURE_OPTS="--without-tidy"
+  mkdir -p "${TEST_TEMP_DIR}/opt/tidy-html5"
+
+  setup_macos_dependencies "8.5.4"
+
+  [[ "${PHP_BUILD_CONFIGURE_OPTS}" == *"--without-tidy"* ]]
+  [[ "${PHP_BUILD_CONFIGURE_OPTS}" != *"--with-tidy="* ]]
+}
+
+@test "should preserve explicit tidy options from PHP_CONFIGURE_OPTIONS" {
+  export OSTYPE="darwin23.0"
+  export PHP_CONFIGURE_OPTIONS="--with-tidy=/custom/tidy"
+  mkdir -p "${TEST_TEMP_DIR}/opt/tidy-html5"
+
+  setup_macos_dependencies "8.5.4"
+
+  [[ "${PHP_BUILD_CONFIGURE_OPTS:-}" != *"--with-tidy=${TEST_TEMP_DIR}/opt/tidy-html5"* ]]
+  [[ "${PHP_BUILD_CONFIGURE_OPTS:-}" != *"--without-tidy"* ]]
+}
+
 @test "should set LDFLAGS on macOS when brew is available" {
   export OSTYPE="darwin23.0"
 
@@ -116,6 +167,17 @@ teardown() {
   setup_macos_dependencies "8.5.4"
 
   [ $? -eq 0 ]
+  [[ "${PHP_BUILD_CONFIGURE_OPTS}" == *"--without-tidy"* ]]
+}
+
+@test "should not duplicate tidy configuration when called more than once" {
+  export OSTYPE="darwin23.0"
+
+  setup_macos_dependencies "8.5.4"
+  local config_before="${PHP_BUILD_CONFIGURE_OPTS}"
+  setup_macos_dependencies "8.5.4"
+
+  [ "${PHP_BUILD_CONFIGURE_OPTS}" = "${config_before}" ]
 }
 
 @test "should preserve existing PHP_BUILD_CONFIGURE_OPTS when adding bzip2" {

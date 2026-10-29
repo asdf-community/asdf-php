@@ -1,5 +1,6 @@
-# Ignore vendor directory (contains php-build submodule/clone)
-vendor/
+# Ignore vendor dependencies except the pinned php-build submodule.
+vendor/*
+!vendor/php-build
 
 # Ignore temporary files
 *.tmp

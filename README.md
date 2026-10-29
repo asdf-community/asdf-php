@@ -43,7 +43,7 @@ brew install gmp libsodium imagemagick tidy-html5
 
 `gmp` and `libsodium` are enabled automatically when pkg-config finds their libraries, on Linux and macOS. To skip one, add `--without-gmp` or `--without-sodium` to `PHP_CONFIGURE_OPTIONS`.
 
-`tidy` is optional on macOS if you install `tidy-html5`. Without it, set `PHP_CONFIGURE_OPTIONS="--without-tidy"`; php-build otherwise enables tidy by default and configure fails when libtidy is missing.
+`tidy` is optional on macOS. The plugin enables it when `tidy-html5` is installed and adds `--without-tidy` when it is absent. Install `tidy-html5` to build the extension, or set `PHP_CONFIGURE_OPTIONS="--without-tidy"` to disable it explicitly.
 
 ## Installation
 
@@ -53,7 +53,7 @@ After installing [asdf](https://asdf-vm.com/guide/getting-started.html), install
 asdf plugin add php https://github.com/asdf-community/asdf-php.git
 ```
 
-When you add the plugin, asdf runs `bin/post-plugin-add`. The hook tries to initialize `vendor/php-build` as a submodule, then falls back to a shallow clone from GitHub. This repository currently has no tracked php-build submodule, so the fallback uses the upstream default branch and its revision can vary by install time.
+When you add the plugin, asdf runs `bin/post-plugin-add`, which initializes the pinned php-build submodule at `vendor/php-build` and prints its revision. The submodule is pinned to `2180bc5462729543639c928e5da05c90b56b9f7c`.
 
 or update an existing installation:
 

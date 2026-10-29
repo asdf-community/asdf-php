@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
 set -eo pipefail
 
-# This hook is called after the plugin is added to asdf
-# We use it to ensure php-build submodule is properly initialized
+# This hook is called after the plugin is added to asdf and initializes the pinned php-build submodule.
 
 PLUGIN_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 PHP_BUILD_DIR="$PLUGIN_DIR/vendor/php-build"
@@ -11,7 +10,7 @@ echo "Initializing php-build..."
 
 # Check if vendor/php-build already exists and has content
 if [ -f "$PHP_BUILD_DIR/bin/php-build" ]; then
-  echo "✓ php-build already initialized"
+  echo "✓ php-build already initialized at $(git -C "$PHP_BUILD_DIR" rev-parse HEAD 2>/dev/null || echo unknown revision)"
   exit 0
 fi
 
@@ -19,31 +18,17 @@ fi
 mkdir -p "$PLUGIN_DIR/vendor"
 
 # Try to initialize submodule if we're in a git repository
-if [ -d "$PLUGIN_DIR/.git" ] || [ -f "$PLUGIN_DIR/.git" ]; then
-  echo "Initializing php-build submodule..."
-  (
-    cd "$PLUGIN_DIR"
-    if git submodule update --init --recursive vendor/php-build 2>/dev/null; then
-      echo "✓ php-build submodule initialized"
-      exit 0
-    else
-      echo "⚠ Submodule initialization failed, trying direct clone..."
-    fi
-  )
+if { [ -d "$PLUGIN_DIR/.git" ] || [ -f "$PLUGIN_DIR/.git" ]; } && git -C "$PLUGIN_DIR" submodule update --init --recursive vendor/php-build; then
+  if [ -f "$PHP_BUILD_DIR/bin/php-build" ]; then
+    PHP_BUILD_REVISION=$(git -C "$PHP_BUILD_DIR" rev-parse HEAD)
+    echo "✓ php-build submodule initialized at $PHP_BUILD_REVISION"
+  fi
 fi
 
-# Fallback: clone php-build directly
 if [ ! -f "$PHP_BUILD_DIR/bin/php-build" ]; then
-  echo "Cloning php-build from GitHub..."
-  if git clone --depth 1 https://github.com/php-build/php-build.git "$PHP_BUILD_DIR"; then
-    echo "✓ php-build cloned successfully"
-  else
-    echo "✗ Failed to clone php-build"
-    echo ""
-    echo "Please manually clone php-build:"
-    echo "  git clone https://github.com/php-build/php-build.git $PHP_BUILD_DIR"
-    exit 1
-  fi
+  echo "✗ Failed to initialize the pinned php-build submodule at $PHP_BUILD_DIR"
+  echo "Run 'git submodule update --init --recursive vendor/php-build' from the plugin directory."
+  exit 1
 fi
 
 # Ensure all bin scripts have executable permissions

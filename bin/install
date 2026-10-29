@@ -29,9 +29,6 @@ if [ ! -f "$PHP_BUILD_ROOT/bin/php-build" ]; then
     echo "  cd $PLUGIN_DIR"
     echo "  git submodule update --init --recursive"
     echo ""
-    echo "If you used 'asdf plugin add php <local-path>', please reinstall using:"
-    echo "  asdf plugin remove php"
-    echo "  asdf plugin add php https://github.com/asdf-community/asdf-php.git"
     exit 1
   fi
 fi
@@ -95,6 +92,10 @@ setup_macos_dependencies() {
 
   # Check if Homebrew is available
   if ! command -v brew &>/dev/null; then
+    local tidy_options="${PHP_BUILD_CONFIGURE_OPTS:-} ${PHP_CONFIGURE_OPTIONS:-}"
+    if [[ $tidy_options != *"--with-tidy"* && $tidy_options != *"--without-tidy"* ]]; then
+      export PHP_BUILD_CONFIGURE_OPTS="${PHP_BUILD_CONFIGURE_OPTS:+${PHP_BUILD_CONFIGURE_OPTS} }--without-tidy"
+    fi
     return 0
   fi
 
@@ -107,9 +108,15 @@ setup_macos_dependencies() {
   local tidy_prefix
   tidy_prefix=$(resolve_brew_package_prefix tidy-html5)
 
-  # Configure tidy-html5 if available (guard against duplication when already set by CI/env)
-  if [ -n "$tidy_prefix" ] && [ -d "$tidy_prefix" ]; then
-    export PHP_BUILD_CONFIGURE_OPTS="${PHP_BUILD_CONFIGURE_OPTS} --with-tidy=${tidy_prefix}"
+  # Configure tidy when available, or disable it when absent (php-build enables it by default).
+  # Preserve explicit user or CI choices from either configure-options variable.
+  local tidy_options="${PHP_BUILD_CONFIGURE_OPTS:-} ${PHP_CONFIGURE_OPTIONS:-}"
+  if [[ $tidy_options != *"--with-tidy"* && $tidy_options != *"--without-tidy"* ]]; then
+    if [ -n "$tidy_prefix" ] && [ -d "$tidy_prefix" ]; then
+      export PHP_BUILD_CONFIGURE_OPTS="${PHP_BUILD_CONFIGURE_OPTS:+${PHP_BUILD_CONFIGURE_OPTS} }--with-tidy=${tidy_prefix}"
+    else
+      export PHP_BUILD_CONFIGURE_OPTS="${PHP_BUILD_CONFIGURE_OPTS:+${PHP_BUILD_CONFIGURE_OPTS} }--without-tidy"
+    fi
   fi
 
   # Configure bzip2 if available (guard against duplication when already set by CI/env)
