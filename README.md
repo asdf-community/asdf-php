@@ -26,7 +26,7 @@ sudo apt-get install -y autoconf bison build-essential curl gettext git libbz2-d
   libgmp-dev libmysqlclient-dev libonig-dev libpng-dev libpq-dev libreadline-dev \
   libsodium-dev libsqlite3-dev libssl-dev libxml2-dev libzip-dev libtidy-dev openssl \
   pkg-config re2c zlib1g-dev ca-certificates wget libtool automake \
-  gcc g++ libxslt1-dev m4 libtool-bin
+  gcc-9 g++-9 libxslt1.1 libxslt1-dev autotools-dev m4 libtool-bin
 ```
 
 ### macOS
@@ -43,7 +43,7 @@ brew install gmp libsodium imagemagick tidy-html5
 
 `gmp` and `libsodium` are enabled automatically when pkg-config finds their libraries, on Linux and macOS. To skip one, add `--without-gmp` or `--without-sodium` to `PHP_CONFIGURE_OPTIONS`.
 
-`tidy` is part of the default build. On macOS, install `tidy-html5`, or build without tidy by setting `PHP_CONFIGURE_OPTIONS="--without-tidy"`.
+`tidy` is optional on macOS if you install `tidy-html5`. Without it, set `PHP_CONFIGURE_OPTIONS="--without-tidy"`; php-build otherwise enables tidy by default and configure fails when libtidy is missing.
 
 ## Installation
 
@@ -52,6 +52,8 @@ After installing [asdf](https://asdf-vm.com/guide/getting-started.html), install
 ```bash
 asdf plugin add php https://github.com/asdf-community/asdf-php.git
 ```
+
+When you add the plugin, asdf runs `bin/post-plugin-add`. The hook tries to initialize `vendor/php-build` as a submodule, then falls back to a shallow clone from GitHub. This repository currently has no tracked php-build submodule, so the fallback uses the upstream default branch and its revision can vary by install time.
 
 or update an existing installation:
 
@@ -171,7 +173,7 @@ asdf uninstall php 8.0.30
 ### Monitoring Installation
 ```bash
 # Watch build progress
-tail -f /tmp/php-build.*.log
+tail -f "${TMPDIR:-/tmp}"/php-build.*.log
 
 # Verbose installation
 VERBOSE=y asdf install php 8.3.29

@@ -19,7 +19,7 @@ on:
 
 env:
   # Common dependencies for all builds
-  UBUNTU_DEPS: "autoconf bison build-essential curl gettext git libgd-dev libcurl4-openssl-dev libedit-dev libicu-dev libjpeg-dev libmysqlclient-dev libonig-dev libpng-dev libpq-dev libgmp-dev libreadline-dev libsodium-dev libsqlite3-dev libssl-dev libxml2-dev libzip-dev libtidy-dev openssl pkg-config re2c zlib1g-dev ca-certificates wget libtool automake gcc-9 g++-9 libxslt1.1 libxslt1-dev autotools-dev m4 libtool-bin"
+  UBUNTU_DEPS: "autoconf bison build-essential curl gettext git libgd-dev libbz2-dev libcurl4-openssl-dev libedit-dev libicu-dev libjpeg-dev libmysqlclient-dev libonig-dev libpng-dev libpq-dev libgmp-dev libreadline-dev libsodium-dev libsqlite3-dev libssl-dev libxml2-dev libzip-dev libtidy-dev openssl pkg-config re2c zlib1g-dev ca-certificates wget libtool automake gcc-9 g++-9 libxslt1.1 libxslt1-dev autotools-dev m4 libtool-bin"
   MACOS_DEPS: "autoconf automake bison freetype gd gettext icu4c krb5 gmp libedit libiconv libjpeg libpng libsodium libxml2 libzip openssl@3 pkg-config re2c zlib bzip2"
 
 jobs:
