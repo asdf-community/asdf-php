@@ -16,12 +16,13 @@ sort_versions() {
 }
 
 main() {
-  local query versions filtered_versions latest_version query_re
+  local query="" versions filtered_versions latest_version query_re
   if (($# > 1)); then
     printf 'Usage: %s [major.minor]\n' "${0##*/}" >&2
     return 2
   fi
-  if (($# == 1)); then
+  # asdf passes an empty query for plain `latest`; that means "no filter".
+  if (($# == 1)) && [[ -n $1 ]]; then
     case "$1" in
       -h | --help)
         printf 'Usage: %s [major.minor]\n' "${0##*/}"
@@ -51,7 +52,7 @@ main() {
       sort_versions
   )
   latest_version=$(printf '%s\n' "${versions}" | tail -n 1)
-  if (($# == 1)); then
+  if [[ -n ${query} ]]; then
     filtered_versions=$(
       printf '%s\n' "${versions}" | grep -E "^${query}\." || true
     )

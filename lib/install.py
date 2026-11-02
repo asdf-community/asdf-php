@@ -13,15 +13,15 @@ import tempfile
 
 
 def run(*args: str, check: bool = True, capture: bool = False, **kwargs):
-    """Run a child command with the current build environment."""
+    """Run a child command with the current build environment.
+
+    ``capture`` pipes stdout unless the caller passes its own ``stdout``.
+    """
+    if capture:
+        # setdefault, not a keyword of its own: subprocess.run rejects a second stdout.
+        kwargs.setdefault("stdout", subprocess.PIPE)
     try:
-        return subprocess.run(
-            args,
-            check=check,
-            text=True,
-            stdout=subprocess.PIPE if capture else None,
-            **kwargs,
-        )
+        return subprocess.run(args, check=check, text=True, **kwargs)
     except FileNotFoundError:
         if check:
             raise
