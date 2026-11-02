@@ -146,6 +146,25 @@ class InstallTests(unittest.TestCase):
             install.setup_macos_dependencies()
         self.assertEqual(os.environ["PHP_BUILD_CONFIGURE_OPTS"], "--without-tidy")
 
+    def test_macos_without_tidy_html5_disables_tidy(self):
+        with (
+            patch.object(install, "on_macos", return_value=True),
+            patch.object(install, "has_command", return_value=True),
+            patch.object(install, "brew_prefix", return_value="/brew"),
+            patch.object(
+                install,
+                "resolve_brew_package_prefix",
+                side_effect=[
+                    "/brew/opt/bzip2",
+                    "/brew/opt/libiconv",
+                    "/brew/opt/tidy-html5",
+                ],
+            ),
+            patch.object(Path, "is_dir", return_value=False),
+        ):
+            install.setup_macos_dependencies()
+        self.assertEqual(os.environ["PHP_BUILD_CONFIGURE_OPTS"], "--without-tidy")
+
     def test_macos_preserves_explicit_tidy_setting(self):
         os.environ["PHP_CONFIGURE_OPTIONS"] = "--with-tidy=/custom/tidy"
         with (
