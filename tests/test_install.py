@@ -1,0 +1,230 @@
+"""Focused regression tests for the Python PHP installer helpers."""
+
+import os
+import importlib.util
+from pathlib import Path
+import subprocess
+import sys
+import tempfile
+import unittest
+from unittest.mock import patch
+from contextlib import redirect_stderr
+from io import StringIO
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "lib"))
+import install
+
+OPENSSL_SPEC = importlib.util.spec_from_file_location(
+    "install_openssl11", Path(__file__).resolve().parents[1] / "lib/install-openssl11.py"
+)
+OPENSSL_INSTALLER = importlib.util.module_from_spec(OPENSSL_SPEC)
+OPENSSL_SPEC.loader.exec_module(OPENSSL_INSTALLER)
+
+
+class InstallTests(unittest.TestCase):
+    def setUp(self):
+        self.environment = patch.dict(os.environ, {}, clear=True)
+        self.environment.start()
+        self.addCleanup(self.environment.stop)
+
+    def test_php_parts_accepts_release_suffixes(self):
+        self.assertEqual(install.php_parts("8.3.15RC1"), (8, 3, 15))
+
+    def test_php_parts_rejects_invalid_version(self):
+        with self.assertRaises(ValueError):
+            install.php_parts("latest")
+
+    def test_openssl_installer_uses_nproc_when_available(self):
+        with patch.object(OPENSSL_INSTALLER.shutil, "which", return_value="/usr/bin/nproc"), patch.object(OPENSSL_INSTALLER, "run", return_value=subprocess.CompletedProcess([], 0, stdout="12")):
+            self.assertEqual(OPENSSL_INSTALLER.build_jobs(), 12)
+
+    def test_openssl_installer_falls_back_to_four_workers(self):
+        with patch.object(OPENSSL_INSTALLER.shutil, "which", return_value=None):
+            self.assertEqual(OPENSSL_INSTALLER.build_jobs(), 4)
+
+    def test_concurrency_is_passed_through(self):
+        os.environ["ASDF_CONCURRENCY"] = "8"
+        install.setup_build_concurrency()
+        self.assertEqual(os.environ["PHP_BUILD_EXTRA_MAKE_ARGUMENTS"], "-j8")
+
+    def test_empty_concurrency_does_not_set_make_argument(self):
+        install.setup_build_concurrency()
+        self.assertNotIn("PHP_BUILD_EXTRA_MAKE_ARGUMENTS", os.environ)
+
+    def test_optional_extensions_enable_installed_packages(self):
+        with patch.object(install, "has_command", return_value=True), patch.object(install, "run", return_value=subprocess.CompletedProcess([], 0)):
+            install.setup_optional_extensions()
+        self.assertEqual(os.environ["PHP_BUILD_CONFIGURE_OPTS"], "--with-sodium --with-gmp")
+
+    def test_optional_extensions_leave_explicit_user_choice_alone(self):
+        os.environ["PHP_CONFIGURE_OPTIONS"] = "--without-gmp"
+        with patch.object(install, "has_command", return_value=True), patch.object(install, "run") as run:
+            install.setup_optional_extensions()
+        run.assert_called_once_with("pkg-config", "--exists", "libsodium", check=False, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+    def test_missing_optional_extensions_only_report(self):
+        with patch.object(install, "has_command", return_value=True), patch.object(install, "run", return_value=subprocess.CompletedProcess([], 1)), patch("builtins.print") as output:
+            install.setup_optional_extensions()
+        self.assertNotIn("PHP_BUILD_CONFIGURE_OPTS", os.environ)
+        self.assertEqual(output.call_count, 2)
+
+    def test_macos_without_brew_disables_tidy(self):
+        with patch.object(install, "on_macos", return_value=True), patch.object(install, "has_command", return_value=False):
+            install.setup_macos_dependencies()
+        self.assertEqual(os.environ["PHP_BUILD_CONFIGURE_OPTS"], "--without-tidy")
+
+    def test_macos_preserves_explicit_tidy_setting(self):
+        os.environ["PHP_CONFIGURE_OPTIONS"] = "--with-tidy=/custom/tidy"
+        with patch.object(install, "on_macos", return_value=True), patch.object(install, "has_command", return_value=False):
+            install.setup_macos_dependencies()
+        self.assertNotIn("PHP_BUILD_CONFIGURE_OPTS", os.environ)
+
+    def test_brew_dependency_configuration_is_idempotent(self):
+        with patch.object(install, "on_macos", return_value=True), patch.object(install, "has_command", return_value=True), patch.object(install, "brew_prefix", return_value="/brew"), patch.object(install, "resolve_brew_package_prefix", side_effect=["/brew/opt/bzip2", "/brew/opt/libiconv", "/brew/opt/tidy-html5"] * 2), patch.object(Path, "is_dir", return_value=True):
+            install.setup_macos_dependencies()
+            install.setup_macos_dependencies()
+        options = os.environ["PHP_BUILD_CONFIGURE_OPTS"]
+        self.assertEqual(options.count("--with-tidy="), 1)
+        self.assertEqual(options.count("--with-bz2="), 1)
+        self.assertEqual(options.count("--with-iconv="), 1)
+        self.assertEqual(os.environ["LDFLAGS"].count("-L/brew/lib"), 1)
+        self.assertEqual(os.environ["CPPFLAGS"].count("-I/brew/include"), 1)
+
+    def test_openssl_pin_uses_brew_prefix(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            prefix = Path(temp_dir) / "openssl@3"
+            (prefix / "lib/pkgconfig").mkdir(parents=True)
+            with patch.object(install, "on_macos", return_value=True), patch.object(install, "has_command", return_value=True), patch.object(install, "brew_prefix", return_value=str(prefix)):
+                install.setup_openssl_pin()
+            self.assertEqual(os.environ["PKG_CONFIG_PATH"], f"{prefix}/lib/pkgconfig")
+            self.assertIn(f"--with-openssl={prefix}", os.environ["PHP_BUILD_CONFIGURE_OPTS"])
+
+    def test_openssl_pin_respects_existing_configuration(self):
+        os.environ["PHP_CONFIGURE_OPTIONS"] = "--with-openssl=/custom"
+        with patch.object(install, "on_macos", return_value=True), patch.object(install, "has_command", return_value=True), patch.object(install, "brew_prefix") as brew:
+            install.setup_openssl_pin()
+        brew.assert_not_called()
+
+    def test_cxxflags_are_upgraded_for_php_85(self):
+        os.environ["CXXFLAGS"] = "-O2 -std=c++11"
+        install.sanitize_cxxflags_for_modern_php("8.5.4")
+        self.assertEqual(os.environ["CXXFLAGS"], "-O2 -std=c++17")
+
+    def test_cxxflags_are_unchanged_before_icu_threshold(self):
+        os.environ["CXXFLAGS"] = "-O2 -std=c++11"
+        install.sanitize_cxxflags_for_modern_php("8.3.6")
+        self.assertEqual(os.environ["CXXFLAGS"], "-O2 -std=c++11")
+
+    def test_cxxflags_are_upgraded_at_php_minor_thresholds(self):
+        for version in ("8.1.33", "8.2.19", "8.3.7", "8.4.0"):
+            with self.subTest(version=version):
+                os.environ["CXXFLAGS"] = "-std=c++11"
+                install.sanitize_cxxflags_for_modern_php(version)
+                self.assertEqual(os.environ["CXXFLAGS"], "-std=c++17")
+
+    def test_brew_prefix_repairs_stale_opt_symlink(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            cellar = root / "Cellar/bzip2/1.0"
+            (cellar / "include").mkdir(parents=True)
+            opt = root / "opt/bzip2"
+            opt.parent.mkdir()
+            opt.symlink_to(root / "missing")
+            with patch.object(install, "brew_prefix", return_value=str(opt)), patch.object(install, "run", return_value=subprocess.CompletedProcess([], 0, stdout=str(root / "Cellar/bzip2"))):
+                self.assertEqual(install.resolve_brew_package_prefix("bzip2"), str(opt))
+            self.assertTrue((opt / "include").is_dir())
+
+    def test_patch_insertion_is_ordered_and_idempotent(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            definition = Path(temp_dir) / "8.0.19"
+            definition.write_text('patch_file "first.patch"\ninstall_package "php"\n')
+            self.assertTrue(install.insert_patch(definition, "second.patch", "first.patch"))
+            self.assertFalse(install.insert_patch(definition, "second.patch", "first.patch"))
+            self.assertEqual(definition.read_text(), 'patch_file "first.patch"\npatch_file "second.patch"\ninstall_package "php"\n')
+
+    def test_php_extension_check_reports_command_status(self):
+        with patch.object(install, "run", side_effect=[subprocess.CompletedProcess([], 0), subprocess.CompletedProcess([], 1)]):
+            self.assertTrue(install.php_has_extension(Path("php"), "openssl"))
+            self.assertFalse(install.php_has_extension(Path("php"), "curl"))
+
+    def test_main_requires_asdf_install_environment(self):
+        with patch.object(install.Path, "is_file", return_value=True), redirect_stderr(StringIO()):
+            self.assertEqual(install.main(Path("/plugin")), 2)
+
+    def test_main_runs_the_build_and_writes_default_php_ini(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            plugin_dir = Path(temp_dir)
+            install_path = plugin_dir / "installed-php"
+            (plugin_dir / "vendor/php-build/bin").mkdir(parents=True)
+            (plugin_dir / "vendor/php-build/bin/php-build").touch()
+            with patch.dict(os.environ, {"ASDF_INSTALL_VERSION": "8.5.4", "ASDF_INSTALL_PATH": str(install_path)}, clear=True), patch.object(install, "setup_macos_dependencies"), patch.object(install, "setup_optional_extensions"), patch.object(install, "configure_openssl11"), patch.object(install, "setup_openssl_pin"), patch.object(install, "setup_compiler_for_old_php"), patch.object(install, "setup_build_concurrency"), patch.object(install, "patch_php_build_definitions"), patch.object(install, "sanitize_cxxflags_for_modern_php"), patch.object(install, "install_composer", return_value=True), patch.object(install, "run") as run:
+                self.assertEqual(install.main(plugin_dir), 0)
+            run.assert_called_once_with(str(plugin_dir / "vendor/php-build/bin/php-build"), "8.5.4", str(install_path))
+            self.assertEqual((install_path / "conf.d/php.ini").read_text(), "# Add custom PHP configuration here\n")
+
+    def test_old_php_build_adds_compatibility_flags(self):
+        with patch.object(install, "on_macos", return_value=False), patch.object(install, "has_command", side_effect=lambda name: name == "gcc"), patch.object(install, "run", return_value=subprocess.CompletedProcess([], 0)):
+            install.setup_compiler_for_old_php("8.0.19")
+        self.assertIn("-Wno-incompatible-pointer-types-discards-qualifiers", os.environ["CFLAGS"])
+        self.assertIn("--without-tidy", os.environ["PHP_BUILD_CONFIGURE_OPTS"])
+        self.assertEqual(os.environ["MAKE_OPTS"], "-j1")
+
+    def test_modern_php_does_not_run_old_compiler_setup(self):
+        with patch.object(install, "has_command") as command_check:
+            install.setup_compiler_for_old_php("8.5.4")
+        command_check.assert_not_called()
+
+    def test_definition_patches_are_copied_and_inserted_in_order(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            plugin = root / "plugin"
+            build = root / "php-build"
+            patch_source = plugin / "patches"
+            patch_source.mkdir(parents=True)
+            for name in ("php-8.0-libxml2-2.12-compat.patch", "php-8.0-icu-74-compat.patch", "php-8.0-intl-cxx17.patch"):
+                (patch_source / name).write_text("patch\n")
+            definitions = build / "share/php-build/definitions"
+            definitions.mkdir(parents=True)
+            definition = definitions / "8.0.19"
+            definition.write_text('patch_file "php-8.0-support-openssl-3.patch"\ninstall_package "php"\n')
+            install.patch_php_build_definitions("8.0.19", plugin, build)
+            result = definition.read_text()
+            self.assertLess(result.index("php-8.0-libxml2-2.12-compat.patch"), result.index("php-8.0-icu-74-compat.patch"))
+            self.assertLess(result.index("php-8.0-icu-74-compat.patch"), result.index("php-8.0-intl-cxx17.patch"))
+            self.assertTrue((build / "share/php-build/patches/php-8.0-intl-cxx17.patch").is_file())
+
+    def test_composer_install_skips_when_openssl_extension_is_missing(self):
+        with tempfile.TemporaryDirectory() as temp_dir, patch.object(install, "php_has_extension", return_value=False), patch("builtins.print"):
+            self.assertFalse(install.install_composer(Path(temp_dir)))
+
+    def test_composer_download_and_install_use_fallback_curl(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            install_path = Path(temp_dir)
+            bin_path = install_path / "bin"
+            bin_path.mkdir()
+            php = bin_path / "php"
+            php.touch()
+
+            def fake_run(*args, **kwargs):
+                if args[0] == str(php) and len(args) > 2 and "copy(" in args[2]:
+                    return subprocess.CompletedProcess(args, 1, stdout="")
+                if args[0] == "curl" and "-o" in args:
+                    (Path(kwargs["cwd"]) / "composer-setup.php").write_text("<?php\n")
+                    return subprocess.CompletedProcess(args, 0)
+                if args[0] == "curl" and args[1:2] == ("-sL",):
+                    return subprocess.CompletedProcess(args, 1, stdout="")
+                if len(args) > 1 and str(args[1]).endswith("composer-setup.php"):
+                    composer = bin_path / "composer"
+                    composer.write_text("#!/bin/sh\nexit 0\n")
+                    composer.chmod(0o755)
+                    return subprocess.CompletedProcess(args, 0)
+                if args[0] == str(php):
+                    return subprocess.CompletedProcess(args, 0, stdout="Composer version 2.0\n")
+                return subprocess.CompletedProcess(args, 0, stdout="")
+
+            with patch.object(install, "php_has_extension", side_effect=lambda _php, extension: extension == "openssl"), patch.object(install, "has_command", side_effect=lambda name: name == "curl"), patch.object(install, "run", side_effect=fake_run):
+                self.assertTrue(install.install_composer(install_path))
+
+
+if __name__ == "__main__":
+    unittest.main()

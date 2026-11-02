@@ -1,40 +1,64 @@
 #!/usr/bin/env bash
+# Print the latest stable PHP release, optionally limited to a major.minor line.
+# Requires: Bash 3.2 or newer.
 
+if ((BASH_VERSINFO[0] * 100 + BASH_VERSINFO[1] < 302)); then
+  printf '%s: requires Bash 3.2 or newer (found %s)\n' \
+    "${0##*/}" "${BASH_VERSION}" >&2
+  exit 1
+fi
 set -euo pipefail
 
-# Get all versions and filter for stable releases only
-# Stable releases are in the format X.Y.Z without any alpha, beta, RC, or other suffixes
-
+# Sort PHP version tags using numeric version components.
 sort_versions() {
   sed 'h; s/[+-]/./g; s/.p\([[:digit:]]\)/.z\1/; s/$/.z/; G; s/\n/ /' |
     LC_ALL=C sort -t. -k 1,1 -k 2,2n -k 3,3n -k 4,4n -k 5,5n | awk '{print $2}'
 }
 
-# Fetch all tags from PHP repository
-versions=$(
-  git ls-remote --tags https://github.com/php/php-src.git |
-    grep 'php-' |
-    awk '!/(\{.*\})/ {print $2}' |
-    sed 's/refs\/tags\/php-//' |
-    grep -E '^[0-9]+\.[0-9]+\.[0-9]+$' |
-    sort_versions
-)
-
-# Get the latest version from the sorted list
-latest_version=$(echo "$versions" | tail -n 1)
-
-# If a query version is provided (e.g., "8.4"), filter to that major.minor
-if [ $# -eq 1 ] && [ -n "$1" ]; then
-  query="$1"
-  # Extract matching versions for the given major.minor
-  filtered_versions=$(echo "$versions" | grep -E "^${query}\." || echo "")
-
-  if [ -n "$filtered_versions" ]; then
-    latest_version=$(echo "$filtered_versions" | tail -n 1)
-  else
-    # If no match found, return nothing (asdf will handle the error)
-    exit 1
+main() {
+  local query versions filtered_versions latest_version query_re
+  if (($# > 1)); then
+    printf 'Usage: %s [major.minor]\n' "${0##*/}" >&2
+    return 2
   fi
-fi
+  if (($# == 1)); then
+    case "$1" in
+      -h | --help)
+        printf 'Usage: %s [major.minor]\n' "${0##*/}"
+        return 0
+        ;;
+      *[!0-9.]* | .* | *.)
+        printf '%s: expected a major.minor version, got %s\n' \
+          "${0##*/}" "$1" >&2
+        return 2
+        ;;
+    esac
+    query=$1
+    query_re='^[0-9]+\.[0-9]+$'
+    [[ ${query} =~ ${query_re} ]] || {
+      printf '%s: expected a major.minor version, got %s\n' \
+        "${0##*/}" "${query}" >&2
+      return 2
+    }
+  fi
 
-echo "$latest_version"
+  versions=$(
+    git ls-remote --tags https://github.com/php/php-src.git |
+      grep 'php-' |
+      awk '!/(\{.*\})/ {print $2}' |
+      sed 's/refs\/tags\/php-//' |
+      grep -E '^[0-9]+\.[0-9]+\.[0-9]+$' |
+      sort_versions
+  )
+  latest_version=$(printf '%s\n' "${versions}" | tail -n 1)
+  if (($# == 1)); then
+    filtered_versions=$(
+      printf '%s\n' "${versions}" | grep -E "^${query}\." || true
+    )
+    [[ -n ${filtered_versions} ]] || return 1
+    latest_version=$(printf '%s\n' "${filtered_versions}" | tail -n 1)
+  fi
+  printf '%s\n' "${latest_version}"
+}
+
+main "$@"

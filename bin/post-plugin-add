@@ -1,42 +1,51 @@
 #!/usr/bin/env bash
-set -eo pipefail
+# Initialize the pinned php-build submodule after asdf adds this plugin.
+# Requires: Bash 3.2 or newer.
 
-# This hook is called after the plugin is added to asdf and initializes the pinned php-build submodule.
-
-PLUGIN_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-PHP_BUILD_DIR="$PLUGIN_DIR/vendor/php-build"
-
-echo "Initializing php-build..."
-
-# Check if vendor/php-build already exists and has content
-if [ -f "$PHP_BUILD_DIR/bin/php-build" ]; then
-  echo "✓ php-build already initialized at $(git -C "$PHP_BUILD_DIR" rev-parse HEAD 2>/dev/null || echo unknown revision)"
-  exit 0
-fi
-
-# Create vendor directory if it doesn't exist
-mkdir -p "$PLUGIN_DIR/vendor"
-
-# Try to initialize submodule if we're in a git repository
-if { [ -d "$PLUGIN_DIR/.git" ] || [ -f "$PLUGIN_DIR/.git" ]; } && git -C "$PLUGIN_DIR" submodule update --init --recursive vendor/php-build; then
-  if [ -f "$PHP_BUILD_DIR/bin/php-build" ]; then
-    PHP_BUILD_REVISION=$(git -C "$PHP_BUILD_DIR" rev-parse HEAD)
-    echo "✓ php-build submodule initialized at $PHP_BUILD_REVISION"
-  fi
-fi
-
-if [ ! -f "$PHP_BUILD_DIR/bin/php-build" ]; then
-  echo "✗ Failed to initialize the pinned php-build submodule at $PHP_BUILD_DIR"
-  echo "Run 'git submodule update --init --recursive vendor/php-build' from the plugin directory."
+if ((BASH_VERSINFO[0] * 100 + BASH_VERSINFO[1] < 302)); then
+  printf '%s: requires Bash 3.2 or newer (found %s)\n' \
+    "${0##*/}" "${BASH_VERSION}" >&2
   exit 1
 fi
+set -euo pipefail
 
-# Ensure all bin scripts have executable permissions
-echo "Setting executable permissions on bin scripts..."
-chmod +x "$PLUGIN_DIR"/bin/*
+main() {
+  local plugin_dir php_build_dir revision
+  plugin_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
+  php_build_dir="${plugin_dir}/vendor/php-build"
 
-echo ""
-echo "✓ asdf-php plugin setup complete!"
-echo ""
-echo "You can now install PHP versions with:"
-echo "  asdf install php <version>"
+  printf '%s\n' 'Initializing php-build...'
+  if [[ -f "${php_build_dir}/bin/php-build" ]]; then
+    revision=$(
+      git -C "${php_build_dir}" rev-parse HEAD 2>/dev/null ||
+        printf '%s' 'unknown revision'
+    )
+    printf '✓ php-build already initialized at %s\n' "${revision}"
+    return 0
+  fi
+
+  mkdir -p "${plugin_dir}/vendor"
+  if { [[ -d "${plugin_dir}/.git" ]] || [[ -f "${plugin_dir}/.git" ]]; } &&
+    git -C "${plugin_dir}" submodule update --init --recursive \
+      vendor/php-build; then
+    if [[ -f "${php_build_dir}/bin/php-build" ]]; then
+      revision=$(git -C "${php_build_dir}" rev-parse HEAD)
+      printf '✓ php-build submodule initialized at %s\n' "${revision}"
+    fi
+  fi
+
+  if [[ ! -f "${php_build_dir}/bin/php-build" ]]; then
+    printf '✗ Failed to initialize the pinned php-build submodule at %s\n' \
+      "${php_build_dir}" >&2
+    printf '%s %s\n' "Run 'git submodule update --init --recursive" \
+      "vendor/php-build' from the plugin directory." >&2
+    return 1
+  fi
+
+  printf '%s\n' 'Setting executable permissions on bin scripts...'
+  chmod +x "${plugin_dir}"/bin/*
+  printf '\n%s\n\n%s\n%s\n' '✓ asdf-php plugin setup complete!' \
+    'You can now install PHP versions with:' '  asdf install php <version>'
+}
+
+main "$@"

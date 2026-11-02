@@ -1,0 +1,8 @@
+shell=bash
+source-path=SCRIPTDIR
+external-sources=true
+enable=require-variable-braces
+enable=require-double-brackets
+enable=avoid-nullary-conditions
+enable=deprecate-which
+enable=useless-use-of-cat

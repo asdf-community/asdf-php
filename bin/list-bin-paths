@@ -1,4 +1,16 @@
 #!/usr/bin/env bash
+# Register PHP binaries and Composer's home vendor binaries with asdf.
+# Requires: Bash 3.2 or newer.
 
-# Register PHP's binaries, and Composer's home vendor binaries.
-echo "bin sbin .composer/vendor/bin"
+if ((BASH_VERSINFO[0] * 100 + BASH_VERSINFO[1] < 302)); then
+  printf '%s: requires Bash 3.2 or newer (found %s)\n' \
+    "${0##*/}" "${BASH_VERSION}" >&2
+  exit 1
+fi
+set -euo pipefail
+
+main() {
+  printf '%s\n' 'bin sbin .composer/vendor/bin'
+}
+
+main "$@"

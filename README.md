@@ -19,9 +19,11 @@ This plugin uses [php-build](https://github.com/php-build/php-build) as the unde
 
 ## Dependencies
 
+The installer requires Python 3.9 or newer, in addition to the PHP build dependencies below.
+
 ### Linux - Ubuntu/Debian example
 ```bash
-sudo apt-get install -y autoconf bison build-essential curl gettext git libbz2-dev \
+sudo apt-get install -y autoconf bison build-essential curl gettext git python3 libbz2-dev \
   libgd-dev libcurl4-openssl-dev libedit-dev libicu-dev libjpeg-dev \
   libgmp-dev libmysqlclient-dev libonig-dev libpng-dev libpq-dev libreadline-dev \
   libsodium-dev libsqlite3-dev libssl-dev libxml2-dev libzip-dev libtidy-dev openssl \
@@ -31,7 +33,7 @@ sudo apt-get install -y autoconf bison build-essential curl gettext git libbz2-d
 
 ### macOS
 ```bash
-brew install autoconf automake bison freetype gd gettext icu4c krb5 \
+brew install autoconf automake bison freetype gd gettext icu4c krb5 python3 \
   libedit libiconv libjpeg libpng libxml2 libzip openssl@3 \
   pkg-config re2c zlib bzip2
 ```
@@ -90,7 +92,7 @@ ASDF_PHP_OPENSSL_AUTO=yes asdf install php 7.4.33
 ASDF_PHP_OPENSSL_AUTO=yes asdf install php 8.0.30
 
 # Manual OpenSSL 1.1 installation
-./lib/install-openssl11.sh --auto
+python3 lib/install-openssl11.py --auto
 asdf install php 7.4.33
 ```
 
@@ -204,8 +206,8 @@ export PKG_CONFIG_PATH="$(brew --prefix icu4c)/lib/pkgconfig:$PKG_CONFIG_PATH"
 ### Manual OpenSSL 1.1 Installation
 ```bash
 # Install OpenSSL 1.1 manually if automatic installation fails
-./lib/install-openssl11.sh --help
-OPENSSL_SHA256=cf3098950... ./lib/install-openssl11.sh --auto
+python3 lib/install-openssl11.py --help
+OPENSSL_SHA256=cf3098950... python3 lib/install-openssl11.py --auto
 ```
 
 For more examples, see [docs/local-testing-manually.md](docs/local-testing-manually.md).

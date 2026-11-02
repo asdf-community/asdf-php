@@ -1,4 +1,4 @@
-SH_SRCFILES = $(shell git ls-files "bin/*")
+SH_SRCFILES = $(filter-out bin/install,$(wildcard bin/* lib/*.sh tests/*.bats))
 SHFMT_BASE_FLAGS = -s -i 2 -ci
 TEST_FILES = $(wildcard tests/*.bats)
 
@@ -15,6 +15,7 @@ lint:
 .PHONY: lint
 
 test:
+	python3 -m unittest discover -s tests -p 'test_*.py'
 	@if command -v bats >/dev/null 2>&1; then \
 		bats $(TEST_FILES); \
 	else \
@@ -26,6 +27,7 @@ test:
 .PHONY: test
 
 test-verbose:
+	python3 -m unittest discover -v -s tests -p 'test_*.py'
 	@if command -v bats >/dev/null 2>&1; then \
 		bats --tap $(TEST_FILES); \
 	else \
