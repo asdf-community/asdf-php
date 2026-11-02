@@ -1,3 +1,5 @@
 {
+  "pythonVersion": "3.9",
+  "typeCheckingMode": "strict",
   "extraPaths": ["lib"]
 }

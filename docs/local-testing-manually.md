@@ -6,12 +6,12 @@ Below are the steps to install different versions of PHP using asdf in local env
 
 Add the local plugin once with `asdf plugin add php "$(pwd)"`. In the examples below, `asdf plugin update php` refreshes that plugin from its local Git origin.
 
-## install 8.5.11 
+## install 8.5.11
 
 ```bash
-asdf uninstall php 8.5.11 
+asdf uninstall php 8.5.11
 asdf plugin update php
-ASDF_CONCURRENCY=8 asdf install php 8.5.11 
+ASDF_CONCURRENCY=8 asdf install php 8.5.11
 ```
 
 ## install 8.5.1

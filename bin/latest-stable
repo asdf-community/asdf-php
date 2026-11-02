@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
-# Print the latest stable PHP release, optionally limited to a major.minor line.
+# Print the latest stable PHP release that php-build can install, optionally
+# limited to a major.minor line. It reads the definitions that ship with
+# php-build, so a release php-build does not know yet is never offered.
 # Requires: Bash 3.2 or newer.
 
 if ((BASH_VERSINFO[0] * 100 + BASH_VERSINFO[1] < 302)); then
@@ -15,8 +17,22 @@ sort_versions() {
     LC_ALL=C sort -t. -k 1,1 -k 2,2n -k 3,3n -k 4,4n -k 5,5n | awk '{print $2}'
 }
 
+# Print the stable releases (X.Y.Z) that have a definition in a directory.
+# Snapshots and pre-releases, such as 8.5snapshot or 8.5.0RC1, are skipped.
+stable_versions() {
+  local definitions=$1 path name
+  local release_re='^[0-9]+\.[0-9]+\.[0-9]+$'
+  for path in "${definitions}"/*; do
+    name=${path##*/}
+    if [[ ${name} =~ ${release_re} ]]; then
+      printf '%s\n' "${name}"
+    fi
+  done
+}
+
 main() {
-  local query="" versions filtered_versions latest_version query_re
+  local query="" plugin_dir definitions versions filtered_versions
+  local latest_version query_re
   if (($# > 1)); then
     printf 'Usage: %s [major.minor]\n' "${0##*/}" >&2
     return 2
@@ -43,22 +59,24 @@ main() {
     }
   fi
 
-  versions=$(
-    git ls-remote --tags https://github.com/php/php-src.git |
-      grep 'php-' |
-      awk '!/(\{.*\})/ {print $2}' |
-      sed 's/refs\/tags\/php-//' |
-      grep -E '^[0-9]+\.[0-9]+\.[0-9]+$' |
-      sort_versions
-  )
+  plugin_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
+  definitions="${plugin_dir}/vendor/php-build/share/php-build/definitions"
+  if [[ ! -d ${definitions} ]]; then
+    printf '%s: php-build definitions not found at %s\n' \
+      "${0##*/}" "${definitions}" >&2
+    printf '  run: git submodule update --init --recursive\n' >&2
+    return 1
+  fi
+
+  versions=$(stable_versions "${definitions}" | sort_versions)
   latest_version=$(printf '%s\n' "${versions}" | tail -n 1)
   if [[ -n ${query} ]]; then
     filtered_versions=$(
       printf '%s\n' "${versions}" | grep -E "^${query}\." || true
     )
-    [[ -n ${filtered_versions} ]] || return 1
     latest_version=$(printf '%s\n' "${filtered_versions}" | tail -n 1)
   fi
+  [[ -n ${latest_version} ]] || return 1
   printf '%s\n' "${latest_version}"
 }
 

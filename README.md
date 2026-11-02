@@ -72,7 +72,7 @@ asdf list all php
 # Install specific version
 asdf install php 8.5.0
 
-# or install latest tagged version with
+# or install the latest stable release that php-build has a definition for
 asdf install php latest
 
 # Set a version globally (in ~/.tool-versions)
