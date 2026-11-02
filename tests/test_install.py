@@ -1,5 +1,7 @@
 """Focused regression tests for the Python PHP installer helpers."""
 
+from __future__ import annotations
+
 import ast
 import os
 import importlib.util
@@ -9,29 +11,39 @@ import sys
 import tempfile
 import unittest
 from unittest.mock import patch
-from contextlib import redirect_stderr
+from contextlib import redirect_stderr, redirect_stdout
 from io import StringIO
+from types import ModuleType
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "lib"))
+LIB_DIR = Path(__file__).resolve().parents[1] / "lib"
+sys.path.insert(0, str(LIB_DIR))
 import install
 
-OPENSSL_SPEC = importlib.util.spec_from_file_location(
-    "install_openssl11", Path(__file__).resolve().parents[1] / "lib/install-openssl11.py"
-)
-OPENSSL_INSTALLER = importlib.util.module_from_spec(OPENSSL_SPEC)
-OPENSSL_SPEC.loader.exec_module(OPENSSL_INSTALLER)
-LIB_DIR = Path(__file__).resolve().parents[1] / "lib"
+
+def load_module(name: str, path: Path) -> ModuleType:
+    """Import a module from a file whose name is not a valid identifier."""
+    spec = importlib.util.spec_from_file_location(name, path)
+    if spec is None or spec.loader is None:
+        raise ImportError(f"cannot load {path}")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
 
 
-def capture_output_clashes(source_file):
-    """Return the line numbers of calls that mix capture_output with stdout or stderr."""
-    tree = ast.parse(source_file.read_text(encoding="utf-8"))
-    clashes = []
-    for node in ast.walk(tree):
-        if isinstance(node, ast.Call):
+OPENSSL_INSTALLER = load_module("install_openssl11", LIB_DIR / "install-openssl11.py")
+
+
+def capture_output_clashes(*source_files: Path) -> list[str]:
+    """Return file:line of calls mixing capture_output with stdout or stderr."""
+    clashes: list[str] = []
+    for source_file in source_files:
+        tree = ast.parse(source_file.read_text(encoding="utf-8"))
+        for node in ast.walk(tree):
+            if not isinstance(node, ast.Call):
+                continue
             names = {keyword.arg for keyword in node.keywords}
             if "capture_output" in names and names & {"stdout", "stderr"}:
-                clashes.append(node.lineno)
+                clashes.append(f"{source_file.name}:{node.lineno}")
     return clashes
 
 
@@ -247,7 +259,7 @@ class RealSubprocessTests(unittest.TestCase):
     ``subprocess.run`` can only fail here.
     """
 
-    def setUp(self):
+    def setUp(self) -> None:
         self.environment = patch.dict(os.environ, {}, clear=True)
         self.environment.start()
         self.addCleanup(self.environment.stop)
@@ -255,63 +267,81 @@ class RealSubprocessTests(unittest.TestCase):
         self.addCleanup(self.commands.cleanup)
         os.environ["PATH"] = self.commands.name
 
-    def make_command(self, name, script, directory=None):
+    def make_command(
+        self, name: str, script: str, directory: Path | None = None
+    ) -> Path:
         command = Path(directory or self.commands.name) / name
-        command.write_text(f"#!/bin/sh\n{script}\n")
+        command.write_text(f"#!/bin/sh\n{script}\n", encoding="utf-8")
         command.chmod(0o755)
         return command
 
-    def test_run_lets_the_caller_choose_stdout(self):
-        result = install.run(sys.executable, "-c", "print('x')", stdout=subprocess.DEVNULL)
+    def test_run_lets_the_caller_choose_stdout(self) -> None:
+        result = install.run(
+            sys.executable, "-c", "print('x')", stdout=subprocess.DEVNULL
+        )
         self.assertIsNone(result.stdout)
 
-    def test_run_capture_returns_the_output(self):
+    def test_run_capture_returns_the_output(self) -> None:
         result = install.run(sys.executable, "-c", "print('x')", capture=True)
         self.assertEqual(result.stdout, "x\n")
 
-    def test_php_extension_check_is_true_when_php_exits_zero(self):
+    def test_php_extension_check_is_true_when_php_exits_zero(self) -> None:
         php = self.make_command("php", "exit 0")
         self.assertTrue(install.php_has_extension(php, "openssl"))
 
-    def test_php_extension_check_is_false_when_php_exits_non_zero(self):
+    def test_php_extension_check_is_false_when_php_exits_non_zero(self) -> None:
         php = self.make_command("php", "exit 1")
         self.assertFalse(install.php_has_extension(php, "openssl"))
 
-    def test_optional_extensions_follow_pkg_config(self):
+    def test_optional_extensions_follow_pkg_config(self) -> None:
         self.make_command("pkg-config", "exit 0")
         install.setup_optional_extensions()
-        self.assertEqual(os.environ["PHP_BUILD_CONFIGURE_OPTS"], "--with-sodium --with-gmp")
+        self.assertEqual(
+            os.environ["PHP_BUILD_CONFIGURE_OPTS"], "--with-sodium --with-gmp"
+        )
 
-    def test_xdebug_install_writes_the_ini_file(self):
-        with tempfile.TemporaryDirectory() as temp_dir, patch("builtins.print"):
+    def test_xdebug_install_writes_the_ini_file(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
             install_path = Path(temp_dir)
             (install_path / "bin").mkdir()
             (install_path / "conf.d").mkdir()
             self.make_command("pecl", "exit 0", directory=install_path / "bin")
-            self.assertTrue(install.install_xdebug(install_path))
-            ini = (install_path / "conf.d/xdebug.ini").read_text()
+            with redirect_stdout(StringIO()):
+                installed = install.install_xdebug(install_path)
+            ini = (install_path / "conf.d/xdebug.ini").read_text(encoding="utf-8")
+        self.assertTrue(installed)
         self.assertIn("zend_extension=xdebug.so", ini)
 
-    def test_openssl_installer_reads_the_job_count_from_nproc(self):
+    def test_openssl_installer_reads_the_job_count_from_nproc(self) -> None:
         self.make_command("nproc", "echo 6")
         self.assertEqual(OPENSSL_INSTALLER.build_jobs(), 6)
 
-    def test_openssl_installer_reports_an_existing_installation(self):
-        with tempfile.TemporaryDirectory() as temp_dir, patch("builtins.print") as output:
+    def test_openssl_installer_reports_an_existing_installation(self) -> None:
+        output = StringIO()
+        with tempfile.TemporaryDirectory() as temp_dir:
             prefix = Path(temp_dir)
             (prefix / "bin").mkdir()
-            self.make_command("openssl", "echo 'OpenSSL 1.1.1w  11 Sep 2023'", directory=prefix / "bin")
+            self.make_command(
+                "openssl",
+                "echo 'OpenSSL 1.1.1w  11 Sep 2023'",
+                directory=prefix / "bin",
+            )
             os.environ["INSTALL_PREFIX"] = str(prefix)
-            self.assertEqual(OPENSSL_INSTALLER.main(["--auto"]), 0)
-        output.assert_any_call(f"OpenSSL 1.1 already installed: 1.1.1w at {prefix}")
+            with redirect_stdout(output):
+                status = OPENSSL_INSTALLER.main(["--auto"])
+        self.assertEqual(status, 0)
+        self.assertIn(
+            f"OpenSSL 1.1 already installed: 1.1.1w at {prefix}", output.getvalue()
+        )
 
 
 class SubprocessKeywordTests(unittest.TestCase):
-    def test_lib_never_mixes_capture_output_with_stdout_or_stderr(self):
+    def test_lib_never_mixes_capture_output_with_stdout_or_stderr(self) -> None:
         # subprocess.run raises ValueError for that mix, and only when the call runs.
-        for name in ("install.py", "install-openssl11.py"):
-            with self.subTest(file=name):
-                self.assertEqual(capture_output_clashes(LIB_DIR / name), [])
+        clashes = capture_output_clashes(
+            LIB_DIR / "install.py", LIB_DIR / "install-openssl11.py"
+        )
+        self.assertEqual(clashes, [])
 
 
 if __name__ == "__main__":

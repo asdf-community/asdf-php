@@ -18,7 +18,7 @@ def run(*args: str, check: bool = True, capture: bool = False, **kwargs):
     ``capture`` pipes stdout unless the caller passes its own ``stdout``.
     """
     if capture:
-        # setdefault, not a keyword of its own: subprocess.run rejects a second stdout.
+        # Let a caller's own stdout win, because subprocess.run rejects a second one.
         kwargs.setdefault("stdout", subprocess.PIPE)
     try:
         return subprocess.run(args, check=check, text=True, **kwargs)

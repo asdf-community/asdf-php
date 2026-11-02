@@ -36,7 +36,9 @@ def checksum(expected, archive):
 def build_jobs():
     for command in (("nproc",), ("sysctl", "-n", "hw.ncpu")):
         if shutil.which(command[0]):
-            result = run(*command, check=False, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+            result = run(
+                *command, check=False, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL
+            )
             try:
                 jobs = int(result.stdout.strip())
             except ValueError:
@@ -63,7 +65,13 @@ def main(argv):
     prefix = Path(os.getenv("INSTALL_PREFIX", str(Path.home() / ".local/openssl-1.1"))).expanduser()
     binary = prefix / "bin/openssl"
     if binary.is_file():
-        result = run(str(binary), "version", check=False, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+        result = run(
+            str(binary),
+            "version",
+            check=False,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL,
+        )
         if result.returncode == 0:
             version = result.stdout.split()[1]
             print(f"OpenSSL 1.1 already installed: {version} at {prefix}")
@@ -140,7 +148,13 @@ def main(argv):
     if not binary.is_file():
         print("Installation failed", file=sys.stderr)
         return 1
-    result = run(str(binary), "version", check=False, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+    result = run(
+        str(binary),
+        "version",
+        check=False,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.DEVNULL,
+    )
     if result.returncode:
         print("OpenSSL installed but version check failed", file=sys.stderr)
         return 1
