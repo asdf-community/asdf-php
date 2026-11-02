@@ -28,17 +28,18 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          # Ubuntu
-          - os: ubuntu-latest
+          # Ubuntu is pinned to 24.04: ubuntu-latest is 26.04, which has no gcc-9
+          # package (used for the legacy builds) and no setup-python Python 3.9.
+          - os: ubuntu-24.04
             version: 7.4.14
             is_legacy: true
-          - os: ubuntu-latest
+          - os: ubuntu-24.04
             version: 8.0.0
             is_legacy: true
-          - os: ubuntu-latest
+          - os: ubuntu-24.04
             version: 8.3.29
             is_legacy: true
-          - os: ubuntu-latest
+          - os: ubuntu-24.04
             version: 8.5.11
             is_legacy: true
           # MacOS
@@ -55,7 +56,7 @@ jobs:
             version: 8.5.11
             is_legacy: true
           # Latest
-          - os: ubuntu-latest
+          - os: ubuntu-24.04
             version: latest
             is_legacy: false
           - os: macos-latest
@@ -232,7 +233,8 @@ jobs:
         run: make fmt-check
 
   unit:
-    runs-on: ubuntu-latest
+    # setup-python has no Python 3.9 build for Ubuntu 26.04 (ubuntu-latest).
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
