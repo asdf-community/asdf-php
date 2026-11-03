@@ -54,6 +54,11 @@ def append_env(name: str, value: str, separator: str = " ") -> None:
     os.environ[name] = f"{current}{separator if current else ''}{value}"
 
 
+def prepend_env(name: str, value: str, separator: str = " ") -> None:
+    current = os.environ.get(name, "")
+    os.environ[name] = f"{value}{separator if current else ''}{current}"
+
+
 def php_parts(version: str) -> tuple[int, int, int]:
     match = re.fullmatch(r"(\d+)\.(\d+)\.(\d+)(?:[A-Za-z][A-Za-z0-9._-]*)?", version)
     if not match:
@@ -169,8 +174,11 @@ def setup_openssl_pin() -> None:
     prefix = brew_prefix("openssl@3")
     if not prefix or not (Path(prefix) / "lib/pkgconfig").is_dir():
         return
-    append_env("PKG_CONFIG_PATH", f"{prefix}/lib/pkgconfig", ":")
-    append_env("LDFLAGS", f"-L{prefix}/lib")
+    # The search paths use the first match, so openssl@3 must come before the
+    # generic -L and pkgconfig entries that are already set.
+    prepend_env("PKG_CONFIG_PATH", f"{prefix}/lib/pkgconfig", ":")
+    prepend_env("LDFLAGS", f"-L{prefix}/lib")
+    # configure uses the last --with-openssl, so this overrides php-build's default.
     append_env("PHP_BUILD_CONFIGURE_OPTS", f"--with-openssl={prefix}")
     print(f"Using OpenSSL from {prefix} (openssl@4 headers do not build PHP 8.3)")
 

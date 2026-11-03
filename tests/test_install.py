@@ -215,6 +215,24 @@ class InstallTests(unittest.TestCase):
                 f"--with-openssl={prefix}", os.environ["PHP_BUILD_CONFIGURE_OPTS"]
             )
 
+    def test_openssl_pin_comes_before_existing_search_paths(self):
+        os.environ["PKG_CONFIG_PATH"] = "/other/pkgconfig"
+        os.environ["LDFLAGS"] = "-L/opt/homebrew/lib"
+        with (
+            patch.object(install, "on_macos", return_value=True),
+            patch.object(install, "has_command", return_value=True),
+            patch.object(install, "brew_prefix", return_value="/brew/opt/openssl@3"),
+            patch.object(Path, "is_dir", return_value=True),
+        ):
+            install.setup_openssl_pin()
+        self.assertEqual(
+            os.environ["PKG_CONFIG_PATH"],
+            "/brew/opt/openssl@3/lib/pkgconfig:/other/pkgconfig",
+        )
+        self.assertEqual(
+            os.environ["LDFLAGS"], "-L/brew/opt/openssl@3/lib -L/opt/homebrew/lib"
+        )
+
     def test_openssl_pin_respects_existing_configuration(self):
         os.environ["PHP_CONFIGURE_OPTIONS"] = "--with-openssl=/custom"
         with (
