@@ -55,7 +55,7 @@ After installing [asdf](https://asdf-vm.com/guide/getting-started.html), install
 asdf plugin add php https://github.com/asdf-community/asdf-php.git
 ```
 
-When you add the plugin, asdf runs `bin/post-plugin-add`, which initializes the pinned php-build submodule at `vendor/php-build` and prints its revision. The submodule is pinned to `2180bc5462729543639c928e5da05c90b56b9f7c`.
+When you add the plugin, asdf runs `bin/post-plugin-add`, which initializes the pinned php-build submodule at `vendor/php-build` and prints its revision. The submodule is pinned to `48f66c3c15eaead0ef362b5349dc85cc24195da3`.
 
 or update an existing installation:
 
