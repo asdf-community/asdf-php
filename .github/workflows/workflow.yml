@@ -31,29 +31,23 @@ jobs:
           # Ubuntu is pinned to 24.04: ubuntu-latest is 26.04, which has no gcc-9
           # package (used for the legacy builds) and no setup-python Python 3.9.
           - os: ubuntu-24.04
-            version: 7.4.14
+            version: 8.3.36
             is_legacy: true
           - os: ubuntu-24.04
-            version: 8.0.0
+            version: 8.4.27
             is_legacy: true
           - os: ubuntu-24.04
-            version: 8.3.29
-            is_legacy: true
-          - os: ubuntu-24.04
-            version: 8.5.11
+            version: 8.5.12
             is_legacy: true
           # MacOS
           - os: macos-latest
-            version: 7.4.14
+            version: 8.3.36
             is_legacy: true
           - os: macos-latest
-            version: 8.0.0
+            version: 8.4.27
             is_legacy: true
           - os: macos-latest
-            version: 8.3.29
-            is_legacy: true
-          - os: macos-latest
-            version: 8.5.11
+            version: 8.5.12
             is_legacy: true
           # Latest
           - os: ubuntu-24.04
