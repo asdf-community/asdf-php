@@ -1,8 +1,68 @@
 #!/usr/bin/env bash
+# Set Composer and OpenSSL environment variables for the selected PHP version.
+# Requires: Bash 3.2 or newer.
 
-# Set Composer's home directory if it's not set.
-if [ "$ASDF_INSTALL_VERSION" != "system" ]; then
-  if [ -z "$COMPOSER_HOME" ]; then
-    export COMPOSER_HOME=$ASDF_INSTALL_PATH/.composer
-  fi
+if ((BASH_VERSINFO[0] * 100 + BASH_VERSINFO[1] < 302)); then
+  printf '%s: requires Bash 3.2 or newer (found %s)\n' \
+    "${0##*/}" "${BASH_VERSION}" >&2
+  exit 1
 fi
+set -euo pipefail
+
+# Set Composer's home directory if it is not set.
+main() {
+  local php_version=${ASDF_INSTALL_VERSION:?ASDF_INSTALL_VERSION must be set}
+  local install_path
+
+  if [[ ${php_version} != system && -z ${COMPOSER_HOME:-} ]]; then
+    install_path=${ASDF_INSTALL_PATH:?ASDF_INSTALL_PATH must be set}
+    export COMPOSER_HOME="${install_path}/.composer"
+  fi
+
+  check_and_set_openssl_path "${php_version}"
+}
+
+# Add the matching OpenSSL 1.1 library directory for legacy PHP releases.
+check_and_set_openssl_path() {
+  local php_version=$1
+  local php_major php_minor php_patch path
+  local needs_openssl1=false
+  local version_re='^[0-9]+\.[0-9]+\.[0-9]+([[:alpha:]][[:alnum:]._-]*)?$'
+
+  [[ ${php_version} == system ]] && return 0
+  [[ ${php_version} =~ ${version_re} ]] || return 0
+  php_major=${php_version%%.*}
+  php_minor=${php_version#*.}
+  php_minor=${php_minor%%.*}
+  php_patch=${php_version#*.*.}
+  php_patch=${php_patch%%[^0-9]*}
+  php_patch=${php_patch:-0}
+
+  if ((php_major == 7)) || {
+    ((php_major == 8 && php_minor == 0 && php_patch < 20)) ||
+      ((php_major == 8 && php_minor == 1 && php_patch < 6))
+  }; then
+    needs_openssl1=true
+  fi
+  [[ ${needs_openssl1} == true ]] || return 0
+
+  local openssl11_paths=(
+    "${HOME}/.local/openssl-1.1"
+    "/usr/local/openssl-1.1"
+    "/usr/local/openssl@1.1"
+    "/usr/local/opt/openssl@1.1"
+    "/opt/openssl-1.1"
+    "/usr/lib64/openssl11"
+  )
+  for path in "${openssl11_paths[@]}"; do
+    if [[ -d "${path}/lib" ]]; then
+      if [[ ":${LD_LIBRARY_PATH:-}:" != *":${path}/lib:"* ]]; then
+        LD_LIBRARY_PATH="${path}/lib${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}"
+        export LD_LIBRARY_PATH
+      fi
+      break
+    fi
+  done
+}
+
+main "$@"

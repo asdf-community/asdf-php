@@ -1,19 +1,35 @@
 #!/usr/bin/env bash
+# Print PHP release tags supported by php-build.
+# Requires: Bash 3.2 or newer.
 
-set -eo pipefail
+if ((BASH_VERSINFO[0] * 100 + BASH_VERSINFO[1] < 302)); then
+  printf '%s: requires Bash 3.2 or newer (found %s)\n' \
+    "${0##*/}" "${BASH_VERSION}" >&2
+  exit 1
+fi
+set -euo pipefail
 
+# Sort PHP version tags using numeric version components.
 sort_versions() {
   sed 'h; s/[+-]/./g; s/.p\([[:digit:]]\)/.z\1/; s/$/.z/; G; s/\n/ /' |
     LC_ALL=C sort -t. -k 1,1 -k 2,2n -k 3,3n -k 4,4n -k 5,5n | awk '{print $2}'
 }
 
-versions=$(
-  git ls-remote --tags https://github.com/php/php-src.git |
-    grep 'php-' |
-    awk '!/(\{.*\})/ {print $2}' |
-    sed 's/refs\/tags\/php-//' |
-    sort_versions |
-    xargs
-)
+main() {
+  local versions
+  if (($#)); then
+    printf 'Usage: %s\n' "${0##*/}" >&2
+    return 2
+  fi
+  versions=$(
+    git ls-remote --tags https://github.com/php/php-src.git |
+      grep 'php-' |
+      awk '!/(\{.*\})/ {print $2}' |
+      sed 's/refs\/tags\/php-//' |
+      sort_versions |
+      xargs
+  )
+  printf '%s\n' "${versions}"
+}
 
-echo "$versions"
+main "$@"

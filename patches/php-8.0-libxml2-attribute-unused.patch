@@ -1,0 +1,11 @@
+--- a/ext/libxml/libxml.c	2026-06-28 20:11:37
++++ b/ext/libxml/libxml.c	2026-06-28 20:11:37
+@@ -376,7 +376,7 @@
+ static xmlOutputBufferPtr
+ php_libxml_output_buffer_create_filename(const char *URI,
+                               xmlCharEncodingHandlerPtr encoder,
+-                              int compression ATTRIBUTE_UNUSED)
++                              int compression __attribute__((unused)))
+ {
+ 	xmlOutputBufferPtr ret;
+ 	xmlURIPtr puri;
