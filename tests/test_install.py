@@ -243,6 +243,103 @@ class InstallTests(unittest.TestCase):
             install.setup_openssl_pin()
         brew.assert_not_called()
 
+    def test_cxxflags_use_newest_installed_versioned_icu_keg(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            prefixes: dict[str, str] = {}
+            for major in (77, 78):
+                prefix = root / f"icu4c@{major}"
+                (prefix / "bin").mkdir(parents=True)
+                (prefix / "bin/icu-config").touch()
+                (prefix / "lib/pkgconfig").mkdir(parents=True)
+                prefixes[f"icu4c@{major}"] = str(prefix)
+
+            def fake_run(
+                *args: str, **kwargs: object
+            ) -> subprocess.CompletedProcess[str]:
+                if args == ("brew", "list", "--formula"):
+                    return subprocess.CompletedProcess(
+                        args, 0, stdout="icu4c@77\nicu4c@78\n"
+                    )
+                if args[0].endswith("icu-config"):
+                    return subprocess.CompletedProcess(args, 0, stdout="78.1.3")
+                self.fail(f"unexpected command: {args}")
+
+            def fake_brew_prefix(formula: str) -> str:
+                return prefixes.get(formula, "")
+
+            os.environ["PKG_CONFIG_PATH"] = "/other/pkgconfig"
+            with (
+                patch.object(install, "on_macos", return_value=True),
+                patch.object(install, "has_command", return_value=True),
+                patch.object(
+                    install,
+                    "brew_prefix",
+                    side_effect=fake_brew_prefix,
+                ) as brew_prefix,
+                patch.object(install, "run", side_effect=fake_run),
+            ):
+                install.sanitize_cxxflags_for_modern_php("8.5.4")
+
+            prefix = prefixes["icu4c@78"]
+            brew_prefix.assert_called_once_with("icu4c@78")
+            self.assertEqual(
+                os.environ["PKG_CONFIG_PATH"],
+                f"{prefix}/lib/pkgconfig:/other/pkgconfig",
+            )
+            self.assertEqual(
+                os.environ["CXXFLAGS"],
+                "-stdlib=libc++ -DU_USING_ICU_NAMESPACE=1 -std=c++17",
+            )
+
+    def test_cxxflags_use_icu4c_alias_as_fallback(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            prefix = Path(temp_dir) / "icu4c"
+            (prefix / "bin").mkdir(parents=True)
+            (prefix / "bin/icu-config").touch()
+            (prefix / "lib/pkgconfig").mkdir(parents=True)
+
+            def fake_run(
+                *args: str, **kwargs: object
+            ) -> subprocess.CompletedProcess[str]:
+                if args == ("brew", "list", "--formula"):
+                    return subprocess.CompletedProcess(args, 0, stdout="")
+                if args[0].endswith("icu-config"):
+                    return subprocess.CompletedProcess(args, 0, stdout="78.1.3")
+                self.fail(f"unexpected command: {args}")
+
+            with (
+                patch.object(install, "on_macos", return_value=True),
+                patch.object(install, "has_command", return_value=True),
+                patch.object(install, "brew_prefix", return_value=str(prefix)),
+                patch.object(install, "run", side_effect=fake_run),
+            ):
+                install.sanitize_cxxflags_for_modern_php("8.5.4")
+
+            self.assertEqual(os.environ["PKG_CONFIG_PATH"], f"{prefix}/lib/pkgconfig")
+            self.assertIn("-DU_USING_ICU_NAMESPACE=1", os.environ["CXXFLAGS"])
+
+    def test_cxxflags_report_when_no_icu_keg_is_installed(self):
+        output = StringIO()
+        with (
+            patch.object(install, "on_macos", return_value=True),
+            patch.object(install, "has_command", return_value=True),
+            patch.object(install, "brew_prefix", return_value="/missing/icu4c"),
+            patch.object(
+                install,
+                "run",
+                return_value=subprocess.CompletedProcess(
+                    ["brew", "list", "--formula"], 0, stdout=""
+                ),
+            ),
+            redirect_stdout(output),
+        ):
+            install.sanitize_cxxflags_for_modern_php("8.5.4")
+
+        self.assertEqual(os.environ["CXXFLAGS"], "-std=c++17")
+        self.assertNotIn("PKG_CONFIG_PATH", os.environ)
+        self.assertIn("No installed icu4c keg found", output.getvalue())
+
     def test_cxxflags_are_upgraded_for_php_85(self):
         os.environ["CXXFLAGS"] = "-O2 -std=c++11"
         install.sanitize_cxxflags_for_modern_php("8.5.4")
@@ -391,6 +488,7 @@ class InstallTests(unittest.TestCase):
             self.assertTrue(
                 (build / "share/php-build/patches/php-8.0-intl-cxx17.patch").is_file()
             )
+
 
 class RealSubprocessTests(unittest.TestCase):
     """Run the helpers against real child processes.

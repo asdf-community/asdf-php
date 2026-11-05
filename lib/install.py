@@ -183,6 +183,33 @@ def setup_openssl_pin() -> None:
     print(f"Using OpenSSL from {prefix} (openssl@4 headers do not build PHP 8.3)")
 
 
+def find_icu_prefix() -> str:
+    formulas = run(
+        "brew",
+        "list",
+        "--formula",
+        check=False,
+        capture=True,
+        stderr=subprocess.DEVNULL,
+    )
+    kegs: list[tuple[int, str]] = []
+    if formulas.returncode == 0:
+        for formula in formulas.stdout.splitlines():
+            match = re.fullmatch(r"icu4c@(\d+)", formula)
+            if match:
+                kegs.append((int(match.group(1)), formula))
+
+    for _, formula in sorted(kegs, reverse=True):
+        prefix = brew_prefix(formula)
+        if prefix and (Path(prefix) / "bin/icu-config").is_file():
+            return prefix
+
+    prefix = brew_prefix("icu4c")
+    if prefix and (Path(prefix) / "bin/icu-config").is_file():
+        return prefix
+    return ""
+
+
 def sanitize_cxxflags_for_modern_php(version: str) -> None:
     major, minor, patch = php_parts(version)
     needs_cxx17 = major > 8 or (
@@ -198,9 +225,10 @@ def sanitize_cxxflags_for_modern_php(version: str) -> None:
         return
     flags = re.sub(r"-std=c\+\+[^ ]*", "", os.getenv("CXXFLAGS", "")).strip()
     if not flags and on_macos() and has_command("brew"):
-        prefix = brew_prefix("icu4c")
-        config = Path(prefix) / "bin/icu-config"
-        if prefix and config.exists():
+        prefix = find_icu_prefix()
+        if prefix:
+            prepend_env("PKG_CONFIG_PATH", f"{prefix}/lib/pkgconfig", ":")
+            config = Path(prefix) / "bin/icu-config"
             result = run(
                 str(config),
                 "--version",
@@ -216,6 +244,8 @@ def sanitize_cxxflags_for_modern_php(version: str) -> None:
                 flags = "-stdlib=libc++ -DU_USING_ICU_NAMESPACE=1"
             elif icu_major > 59:
                 flags = "-stdlib=libc++"
+        else:
+            print("No installed icu4c keg found")
     os.environ["CXXFLAGS"] = f"{flags} -std=c++17".strip()
 
 
