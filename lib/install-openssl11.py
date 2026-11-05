@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Build OpenSSL 1.1 for PHP versions that need the legacy ABI."""
 
 from __future__ import annotations

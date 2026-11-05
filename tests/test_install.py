@@ -65,6 +65,10 @@ class InstallTests(unittest.TestCase):
         environment.start()
         self.addCleanup(environment.stop)
 
+    def test_install_entrypoint_is_executable(self) -> None:
+        entrypoint = LIB_DIR.parent / "bin/install"
+        self.assertTrue(entrypoint.stat().st_mode & 0o111, f"{entrypoint} is not executable")
+
     def test_php_parts_accepts_release_suffixes(self):
         self.assertEqual(install.php_parts("8.3.15RC1"), (8, 3, 15))
 
