@@ -24,12 +24,12 @@ import install
 
 def load_module(name: str, path: Path) -> ModuleType:
     """Import a module from a file whose name is not a valid identifier."""
-    spec = importlib.util.spec_from_file_location(name, path)
-    # The Python 3.9 stubs declare exec_module only on the concrete loader.
-    if spec is None or not isinstance(spec.loader, SourceFileLoader):
+    loader = SourceFileLoader(name, str(path))
+    spec = importlib.util.spec_from_loader(name, loader)
+    if spec is None:
         raise ImportError(f"cannot load {path}")
     module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
+    loader.exec_module(module)
     return module
 
 
