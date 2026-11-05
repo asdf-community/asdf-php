@@ -1,6 +1,7 @@
 SH_SRCFILES = $(filter-out bin/install,$(wildcard bin/* lib/*.sh tests/*.bats))
 SHFMT_BASE_FLAGS = -s -i 2 -ci
 TEST_FILES = $(wildcard tests/*.bats)
+MAX_INSTALL_LINES ?= 50
 
 fmt:
 	shfmt -w $(SHFMT_BASE_FLAGS) $(SH_SRCFILES)
@@ -36,5 +37,13 @@ test-verbose:
 	fi
 .PHONY: test-verbose
 
-check: fmt-check lint test
+linecount-check:
+	@actual=$$(wc -l < bin/install); \
+	if [ "$$actual" -gt "$(MAX_INSTALL_LINES)" ]; then \
+		echo "bin/install is $$actual lines (limit: $(MAX_INSTALL_LINES))"; \
+		exit 1; \
+	fi
+.PHONY: linecount-check
+
+check: fmt-check lint test linecount-check
 .PHONY: check

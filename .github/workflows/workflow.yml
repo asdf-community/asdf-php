@@ -238,5 +238,5 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y bats
-      - name: Run tests
-        run: make test
+      - name: Run tests and installer line-count gate
+        run: make test linecount-check
