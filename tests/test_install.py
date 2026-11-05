@@ -296,18 +296,6 @@ class InstallTests(unittest.TestCase):
                 'patch_file "first.patch"\npatch_file "second.patch"\ninstall_package "php"\n',
             )
 
-    def test_php_extension_check_reports_command_status(self):
-        with patch.object(
-            install,
-            "run",
-            side_effect=[
-                subprocess.CompletedProcess([], 0),
-                subprocess.CompletedProcess([], 1),
-            ],
-        ):
-            self.assertTrue(install.php_has_extension(Path("php"), "openssl"))
-            self.assertFalse(install.php_has_extension(Path("php"), "curl"))
-
     def test_main_requires_asdf_install_environment(self):
         with (
             patch.object(Path, "is_file", return_value=True),
@@ -338,7 +326,6 @@ class InstallTests(unittest.TestCase):
                 patch.object(install, "setup_build_concurrency"),
                 patch.object(install, "patch_php_build_definitions"),
                 patch.object(install, "sanitize_cxxflags_for_modern_php"),
-                patch.object(install, "install_composer", return_value=True),
                 patch.object(install, "run") as run,
             ):
                 self.assertEqual(install.main(plugin_dir), 0)
@@ -405,59 +392,6 @@ class InstallTests(unittest.TestCase):
                 (build / "share/php-build/patches/php-8.0-intl-cxx17.patch").is_file()
             )
 
-    def test_composer_install_skips_when_openssl_extension_is_missing(self):
-        with (
-            tempfile.TemporaryDirectory() as temp_dir,
-            patch.object(install, "php_has_extension", return_value=False),
-            patch("builtins.print"),
-        ):
-            self.assertFalse(install.install_composer(Path(temp_dir)))
-
-    def test_composer_download_and_install_use_fallback_curl(self):
-        with tempfile.TemporaryDirectory() as temp_dir:
-            install_path = Path(temp_dir)
-            bin_path = install_path / "bin"
-            bin_path.mkdir()
-            php = bin_path / "php"
-            php.touch()
-
-            def fake_run(
-                *args: str, **kwargs: object
-            ) -> subprocess.CompletedProcess[str]:
-                # Slices instead of len() checks: pyright narrows args to a shorter
-                # tuple after a failed len() test and then rejects args[0].
-                if args[0] == str(php) and "copy(" in " ".join(args[2:]):
-                    return subprocess.CompletedProcess(args, 1, stdout="")
-                if args[0] == "curl" and "-o" in args:
-                    cwd = Path(str(kwargs["cwd"]))
-                    (cwd / "composer-setup.php").write_text("<?php\n")
-                    return subprocess.CompletedProcess(args, 0)
-                if args[0] == "curl" and args[1:2] == ("-sL",):
-                    return subprocess.CompletedProcess(args, 1, stdout="")
-                if any(arg.endswith("composer-setup.php") for arg in args[1:2]):
-                    composer = bin_path / "composer"
-                    composer.write_text("#!/bin/sh\nexit 0\n")
-                    composer.chmod(0o755)
-                    return subprocess.CompletedProcess(args, 0)
-                if args[0] == str(php):
-                    return subprocess.CompletedProcess(
-                        args, 0, stdout="Composer version 2.0\n"
-                    )
-                return subprocess.CompletedProcess(args, 0, stdout="")
-
-            def php_with_openssl_only(_php: Path, extension: str) -> bool:
-                return extension == "openssl"
-
-            with (
-                patch.object(
-                    install, "php_has_extension", side_effect=php_with_openssl_only
-                ),
-                patch.object(install, "has_command", side_effect=finds_only("curl")),
-                patch.object(install, "run", side_effect=fake_run),
-            ):
-                self.assertTrue(install.install_composer(install_path))
-
-
 class RealSubprocessTests(unittest.TestCase):
     """Run the helpers against real child processes.
 
@@ -506,14 +440,6 @@ esac""",
     def test_run_capture_returns_the_output(self) -> None:
         result = install.run(sys.executable, "-c", "print('x')", capture=True)
         self.assertEqual(result.stdout, "x\n")
-
-    def test_php_extension_check_is_true_when_php_exits_zero(self) -> None:
-        php = self.make_command("php", "exit 0")
-        self.assertTrue(install.php_has_extension(php, "openssl"))
-
-    def test_php_extension_check_is_false_when_php_exits_non_zero(self) -> None:
-        php = self.make_command("php", "exit 1")
-        self.assertFalse(install.php_has_extension(php, "openssl"))
 
     def test_optional_extensions_follow_pkg_config(self) -> None:
         self.make_command("pkg-config", "exit 0")
