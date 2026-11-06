@@ -1,78 +1,93 @@
 # asdf-php
 
-[PHP](https://www.php.net) plugin for asdf version manager
+An [asdf](https://asdf-vm.com/) plugin that builds PHP with a pinned
+[php-build](https://github.com/php-build/php-build) submodule.
 
-_Original version of this plugin created by
-[@Stratus3D](https://github.com/Stratus3D)_
+Originally created by [@Stratus3D](https://github.com/Stratus3D).
 
-## Build History
+## Requirements
 
-[![Build history](https://buildstats.info/github/chart/asdf-community/asdf-php?branch=master)](https://github.com/asdf-community/asdf-php/actions)
+The installer requires Python 3.9 or newer. Install PHP build dependencies
+for your system:
 
-## Prerequirements
-
-Check the [.github/workflows/workflow.yml](.github/workflows/workflow.yml) for
-dependencies, paths, and environment variables needed to install the latest PHP
-version. To be honest, supporting a major version other than the latest without
-any extra work from the user is an endless endeavor that won't ever really work
-too well. It's not that we don't support them at all, but it's almost impossible
-for us to support them.
-
-## Installation
+### Ubuntu and Debian
 
 ```bash
-asdf plugin-add php https://github.com/asdf-community/asdf-php.git
+sudo apt-get install -y autoconf bison build-essential curl gettext git python3 \
+  libgd-dev libbz2-dev libcurl4-openssl-dev libedit-dev libicu-dev libjpeg-dev \
+  libmysqlclient-dev libonig-dev libpng-dev libpq-dev libgmp-dev libreadline-dev \
+  libsodium-dev libsqlite3-dev libssl-dev libxml2-dev libzip-dev libtidy-dev \
+  openssl pkg-config re2c zlib1g-dev ca-certificates wget libtool automake \
+  gcc-9 g++-9 libxslt1.1 libxslt1-dev autotools-dev m4 libtool-bin
 ```
 
-## Note
-
-Composer is installed globally alongside PHP by default. If your application requires additional php extensions, you may need to install them via `pecl`. For example:
+### macOS
 
 ```bash
-pecl install redis
-pecl install imagick
-
-echo "extension=redis.so
-extension=imagick.so" > $(asdf where php)/conf.d/php.ini
+brew install autoconf automake bison freetype gd gettext icu4c krb5 gmp \
+  libedit libiconv libjpeg libpng libsodium libxml2 libzip openssl@3 \
+  pkg-config re2c zlib bzip2 python3
 ```
 
-#### macOS
+For the optional tidy extension, run `brew install tidy-html5`.
 
-To install PHP on macOS, you'll need a set of packages [installed via homebrew](https://github.com/asdf-community/asdf-php/blob/248e9c6e2a7824510788f05e8cee848a62200b65/.github/workflows/workflow.yml#L52).
-
-There's also a set of optional packages which enable additional extensions to be enabled:
-
-```
-brew install gmp libsodium imagemagick
-```
-
-Note that the supported extension are not exhaustive, so you may need edit the `bin/install` script to support additional extension. Feel free to submit a PR for any missing extensions.
-
-#### PHP-PEAR
-
-If PHP PEAR is down you can install PHP without PEAR. Specify `PHP_WITHOUT_PEAR` variable with any value
-(except no), eg:
+## Install and use
 
 ```bash
-PHP_WITHOUT_PEAR=yes asdf install php <version>
+asdf plugin add php https://github.com/asdf-community/asdf-php.git
+asdf list all php
+asdf install php 8.3.29
+asdf set php 8.3.29
+php -v
+composer --version
 ```
 
-## Usage
+Use `asdf install php latest` for the latest stable release known to php-build.
+Use `asdf plugin update php` to update an existing plugin installation. Adding the
+plugin initialises its pinned php-build submodule.
 
-Check [asdf](https://github.com/asdf-vm/asdf) readme for instructions on how to
-install & manage versions.
+## Build behaviour
 
-## Global Composer Dependencies
+- php-build downloads and compiles PHP. Its Composer plugin installs Composer
+  alongside each PHP version.
+- GMP and sodium are enabled when `pkg-config` finds their libraries. Add
+  `--without-gmp` or `--without-sodium` to `PHP_CONFIGURE_OPTIONS` to opt out.
+- On macOS, the plugin enables tidy when `tidy-html5` is installed and disables
+  it otherwise. The plugin prefers installed `openssl@3` and finds an installed versioned
+  `icu4c` keg.
+- The plugin sets C++17 for PHP 8.1.33+, 8.2.19+, 8.3.7+, 8.4+, and newer
+  releases. Older PHP versions receive compatibility patches where needed.
 
-Composer is installed globally by default. To use it, you'll need to reshim:
+## Build options
 
-```shell
-composer global require friendsofphp/php-cs-fixer
-asdf reshim
-php-cs-fixer --version
+```bash
+# Pass additional configure options after the plugin's defaults.
+PHP_CONFIGURE_OPTIONS="--without-gmp --without-sodium" asdf install php 8.3.29
+
+# Install OpenSSL 1.1 automatically for legacy PHP when no terminal is available.
+ASDF_PHP_OPENSSL_AUTO=yes asdf install php 7.4.33
+
+# Use more build jobs.
+ASDF_CONCURRENCY=8 asdf install php 8.3.29
 ```
 
-## License
+PHP 7.4, PHP 8.0 before 8.0.20, and PHP 8.1 before 8.1.6 need OpenSSL 1.1
+when the system provides OpenSSL 3. On an interactive terminal, the plugin asks
+before installing it. Set `ASDF_PHP_OPENSSL_AUTO=yes` for unattended builds.
 
-Licensed under the
-[Apache License, Version 2.0](https://www.apache.org/licenses/LICENSE-2.0).
+## Troubleshooting
+
+- On macOS, install `openssl@3` if a build selects an incompatible OpenSSL.
+  Install `tidy-html5` if you need tidy, or use
+  `PHP_CONFIGURE_OPTIONS="--without-tidy"` to disable it.
+- If php-build is missing from a source checkout, run
+  `git submodule update --init --recursive vendor/php-build` there.
+- php-build writes logs under `${TMPDIR:-/tmp}`. After a build starts, watch them
+  with `tail -f "${TMPDIR:-/tmp}"/php-build.*.log`.
+
+See [local testing](docs/local-testing-manually.md) for a disposable install
+recipe.
+
+## Licence
+
+[Apache License 2.0](LICENSE).

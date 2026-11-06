@@ -1,0 +1,83 @@
+#!/usr/bin/env bash
+# Print the latest stable PHP release that php-build can install, optionally
+# limited to a major.minor line. It reads the definitions that ship with
+# php-build, so a release php-build does not know yet is never offered.
+# Requires: Bash 3.2 or newer.
+
+if ((BASH_VERSINFO[0] * 100 + BASH_VERSINFO[1] < 302)); then
+  printf '%s: requires Bash 3.2 or newer (found %s)\n' \
+    "${0##*/}" "${BASH_VERSION}" >&2
+  exit 1
+fi
+set -euo pipefail
+
+# Sort PHP version tags using numeric version components.
+sort_versions() {
+  sed 'h; s/[+-]/./g; s/.p\([[:digit:]]\)/.z\1/; s/$/.z/; G; s/\n/ /' |
+    LC_ALL=C sort -t. -k 1,1 -k 2,2n -k 3,3n -k 4,4n -k 5,5n | awk '{print $2}'
+}
+
+# Print the stable releases (X.Y.Z) that have a definition in a directory.
+# Snapshots and pre-releases, such as 8.5snapshot or 8.5.0RC1, are skipped.
+stable_versions() {
+  local definitions=$1 path name
+  local release_re='^[0-9]+\.[0-9]+\.[0-9]+$'
+  for path in "${definitions}"/*; do
+    name=${path##*/}
+    if [[ ${name} =~ ${release_re} ]]; then
+      printf '%s\n' "${name}"
+    fi
+  done
+}
+
+main() {
+  local query="" plugin_dir definitions versions filtered_versions
+  local latest_version query_re
+  if (($# > 1)); then
+    printf 'Usage: %s [major.minor]\n' "${0##*/}" >&2
+    return 2
+  fi
+  # asdf passes an empty query for plain `latest`; that means "no filter".
+  if (($# == 1)) && [[ -n $1 ]]; then
+    case "$1" in
+      -h | --help)
+        printf 'Usage: %s [major.minor]\n' "${0##*/}"
+        return 0
+        ;;
+      *[!0-9.]* | .* | *.)
+        printf '%s: expected a major.minor version, got %s\n' \
+          "${0##*/}" "$1" >&2
+        return 2
+        ;;
+    esac
+    query=$1
+    query_re='^[0-9]+\.[0-9]+$'
+    [[ ${query} =~ ${query_re} ]] || {
+      printf '%s: expected a major.minor version, got %s\n' \
+        "${0##*/}" "${query}" >&2
+      return 2
+    }
+  fi
+
+  plugin_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
+  definitions="${plugin_dir}/vendor/php-build/share/php-build/definitions"
+  if [[ ! -d ${definitions} ]]; then
+    printf '%s: php-build definitions not found at %s\n' \
+      "${0##*/}" "${definitions}" >&2
+    printf '  run: git submodule update --init --recursive\n' >&2
+    return 1
+  fi
+
+  versions=$(stable_versions "${definitions}" | sort_versions)
+  latest_version=$(printf '%s\n' "${versions}" | tail -n 1)
+  if [[ -n ${query} ]]; then
+    filtered_versions=$(
+      printf '%s\n' "${versions}" | grep -E "^${query}\." || true
+    )
+    latest_version=$(printf '%s\n' "${filtered_versions}" | tail -n 1)
+  fi
+  [[ -n ${latest_version} ]] || return 1
+  printf '%s\n' "${latest_version}"
+}
+
+main "$@"

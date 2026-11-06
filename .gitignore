@@ -1,0 +1,21 @@
+# Ignore vendor dependencies except the pinned php-build submodule.
+vendor/*
+!vendor/php-build
+
+# Ignore temporary files
+*.tmp
+*.log
+.DS_Store
+
+# Ignore editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Ignore OS files
+Thumbs.db
+
+# Python
+__pycache__
