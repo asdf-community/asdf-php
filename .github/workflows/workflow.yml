@@ -228,7 +228,7 @@ jobs:
 
   unit:
     # setup-python has no Python 3.9 build for Ubuntu 26.04 (ubuntu-latest).
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
