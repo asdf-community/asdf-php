@@ -271,7 +271,7 @@ jobs:
   fedora:
     runs-on: ubuntu-latest
     container:
-      image: fedora:44
+      image: fedora:46
     steps:
       - name: Install system packages
         run: dnf install -y bash curl git nodejs autoconf bison gcc gcc-c++ make re2c pkgconf-pkg-config python3 ca-certificates libxml2-devel sqlite-devel oniguruma-devel libcurl-devel libzip-devel libjpeg-turbo-devel libpng-devel libicu-devel openssl-devel readline-devel zlib-devel bzip2-devel libxslt-devel libtidy-devel
