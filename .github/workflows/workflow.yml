@@ -6,21 +6,17 @@ on:
       - opened
       - synchronize
       - reopened
-    paths-ignore:
-      - "**.md"
   push:
     branches:
       - master
       - main
-    paths-ignore:
-      - "**.md"
   schedule:
     - cron: 0 0 * * 5
 
 env:
-  # Common dependencies for all builds
-  UBUNTU_DEPS: "autoconf bison build-essential curl gettext git python3 libgd-dev libbz2-dev libcurl4-openssl-dev libedit-dev libicu-dev libjpeg-dev libmysqlclient-dev libonig-dev libpng-dev libpq-dev libgmp-dev libreadline-dev libsodium-dev libsqlite3-dev libssl-dev libxml2-dev libzip-dev libtidy-dev openssl pkg-config re2c zlib1g-dev ca-certificates wget libtool automake gcc-9 g++-9 libxslt1.1 libxslt1-dev autotools-dev m4 libtool-bin"
-  MACOS_DEPS: "autoconf automake bison freetype gd gettext icu4c krb5 gmp libedit libiconv libjpeg libpng libsodium libxml2 libzip openssl@3 pkg-config re2c zlib bzip2 python3"
+  # Build dependencies from the README. Optional GMP and sodium are not tested here.
+  UBUNTU_DEPS: "autoconf bison build-essential curl git python3 pkg-config re2c ca-certificates libbz2-dev libcurl4-openssl-dev libicu-dev libjpeg-dev libpng-dev libonig-dev libreadline-dev libsqlite3-dev libssl-dev libxml2-dev libzip-dev zlib1g-dev libxslt1-dev libtidy-dev"
+  MACOS_DEPS: "autoconf bison bzip2 icu4c libedit libiconv libjpeg libpng libxml2 libxslt libzip openssl@3 pkg-config re2c zlib python3"
 
 jobs:
   plugin_test:
@@ -77,6 +73,8 @@ jobs:
             sudo apt-get install -y ${{ env.UBUNTU_DEPS }}
           elif [ "${{ runner.os }}" = "macOS" ]; then
             brew install ${{ env.MACOS_DEPS }}
+            # Exercise the documented optional tidy extension in CI.
+            brew install tidy-html5
             # Set up macOS-specific environment for PHP build
             echo "CXXFLAGS=-std=c++17 -stdlib=libc++" >> $GITHUB_ENV
             # Set up library paths for configure to find dependencies
@@ -186,7 +184,7 @@ jobs:
           echo "Installation path: $(asdf where php)"
 
           # php --ri exits non-zero when an extension is not loaded
-          for ext in openssl curl sodium gmp; do
+          for ext in openssl curl intl mbstring zip gd xsl bz2 pdo_sqlite tidy; do
             php --ri "$ext" >/dev/null || { echo "✗ $ext extension missing"; exit 1; }
             echo "✓ $ext"
           done
@@ -240,3 +238,60 @@ jobs:
           sudo apt-get install -y bats
       - name: Run tests and installer line-count gate
         run: make test linecount-check
+
+  arch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    container:
+      image: archlinux:base@sha256:b1c2fe6e717bfd5673af8fc217e1e1c3ce0dcbb1d53c3414c8425e7ce79fc6d9
+    steps:
+      - name: Install system packages
+        run: pacman -Syu --noconfirm --needed bash curl git nodejs autoconf bison gcc make re2c pkgconf python ca-certificates libxml2 sqlite oniguruma libzip libjpeg-turbo libpng icu openssl readline zlib bzip2 libxslt tidy
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Setup asdf
+        uses: asdf-vm/actions/setup@v4
+      - name: Build and check PHP latest
+        shell: bash
+        run: |
+          set -euo pipefail
+          asdf plugin add php "$GITHUB_WORKSPACE"
+          if ! asdf install php latest; then
+            find "${TMPDIR:-/tmp}" /tmp -name 'php-build.*.log' -type f -print -exec tail -150 {} \; 2>/dev/null || true
+            exit 1
+          fi
+          asdf set php latest
+          php --version
+          for ext in openssl curl intl mbstring zip gd xsl bz2 pdo_sqlite tidy; do
+            php --ri "$ext" >/dev/null
+            printf '✓ %s\n' "$ext"
+          done
+
+  fedora:
+    runs-on: ubuntu-latest
+    container:
+      image: fedora:44
+    steps:
+      - name: Install system packages
+        run: dnf install -y bash curl git nodejs autoconf bison gcc gcc-c++ make re2c pkgconf-pkg-config python3 ca-certificates libxml2-devel sqlite-devel oniguruma-devel libcurl-devel libzip-devel libjpeg-turbo-devel libpng-devel libicu-devel openssl-devel readline-devel zlib-devel bzip2-devel libxslt-devel libtidy-devel
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Setup asdf
+        uses: asdf-vm/actions/setup@v4
+      - name: Build and check PHP latest
+        shell: bash
+        run: |
+          set -euo pipefail
+          asdf plugin add php "$GITHUB_WORKSPACE"
+          if ! asdf install php latest; then
+            find "${TMPDIR:-/tmp}" /tmp -name 'php-build.*.log' -type f -print -exec tail -150 {} \; 2>/dev/null || true
+            exit 1
+          fi
+          asdf set php latest
+          php --version
+          for ext in openssl curl intl mbstring zip gd xsl bz2 pdo_sqlite tidy; do
+            php --ri "$ext" >/dev/null
+            printf '✓ %s\n' "$ext"
+          done

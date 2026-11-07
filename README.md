@@ -13,20 +13,48 @@ for your system:
 ### Ubuntu and Debian
 
 ```bash
-sudo apt-get install -y autoconf bison build-essential curl gettext git python3 \
-  libgd-dev libbz2-dev libcurl4-openssl-dev libedit-dev libicu-dev libjpeg-dev \
-  libmysqlclient-dev libonig-dev libpng-dev libpq-dev libgmp-dev libreadline-dev \
-  libsodium-dev libsqlite3-dev libssl-dev libxml2-dev libzip-dev libtidy-dev \
-  openssl pkg-config re2c zlib1g-dev ca-certificates wget libtool automake \
-  gcc-9 g++-9 libxslt1.1 libxslt1-dev autotools-dev m4 libtool-bin
+sudo apt-get install -y autoconf bison build-essential curl git python3 \
+  pkg-config re2c ca-certificates libbz2-dev libcurl4-openssl-dev libicu-dev \
+  libjpeg-dev libpng-dev libonig-dev libreadline-dev libsqlite3-dev libssl-dev \
+  libxml2-dev libzip-dev zlib1g-dev libxslt1-dev libtidy-dev
 ```
+
+### Arch Linux
+
+```bash
+sudo pacman -Syu --needed autoconf bison gcc make re2c pkgconf curl git python \
+  ca-certificates libxml2 sqlite oniguruma libzip libjpeg-turbo libpng icu \
+  openssl readline zlib bzip2 libxslt tidy
+```
+
+### Fedora 44
+
+```bash
+sudo dnf install autoconf bison gcc gcc-c++ make re2c curl git python3 \
+  pkgconf-pkg-config ca-certificates libxml2-devel sqlite-devel oniguruma-devel \
+  libcurl-devel libzip-devel libjpeg-turbo-devel libpng-devel \
+  libicu-devel openssl-devel readline-devel zlib-devel bzip2-devel libxslt-devel \
+  libtidy-devel
+```
+
+`GMP` and `sodium` support is enabled when their development libraries are present.
+These extensions are optional. On Ubuntu or Debian install `libgmp-dev` and
+`libsodium-dev`; on Arch install `gmp` and `libsodium`; on Fedora install `gmp-devel`
+and `libsodium-devel`; on macOS install `gmp` and `libsodium` with Homebrew.
+PostgreSQL support is optional too. Install `libpq-dev` on Ubuntu or Debian,
+`postgresql-libs` on Arch, `libpq-devel` on Fedora, or `libpq` with Homebrew, then
+pass `--with-pgsql` through `PHP_CONFIGURE_OPTIONS`. `GD` uses PHP's bundled library,
+so an OS `gd` development package is unnecessary. For `FreeType` font support in `GD`,
+install `libfreetype6-dev` on Ubuntu or Debian, `freetype2` on Arch, `freetype-devel`
+on Fedora, or `freetype` with Homebrew. `php-build` enables tidy by default on Linux,
+except for PHP 7.4 and PHP 8.0 releases before 8.0.20. These package lists include
+the tidy dependency.
 
 ### macOS
 
 ```bash
-brew install autoconf automake bison freetype gd gettext icu4c krb5 gmp \
-  libedit libiconv libjpeg libpng libsodium libxml2 libzip openssl@3 \
-  pkg-config re2c zlib bzip2 python3
+brew install autoconf bison bzip2 icu4c libedit libiconv libjpeg libpng \
+  libxml2 libxslt libzip openssl@3 pkg-config re2c zlib python3
 ```
 
 For the optional tidy extension, run `brew install tidy-html5`.
@@ -83,7 +111,8 @@ before installing it. Set `ASDF_PHP_OPENSSL_AUTO=yes` for unattended builds.
 - If php-build is missing from a source checkout, run
   `git submodule update --init --recursive vendor/php-build` there.
 - php-build writes logs under `${TMPDIR:-/tmp}`. After a build starts, watch them
-  with `tail -f "${TMPDIR:-/tmp}"/php-build.*.log`.
+  with `tail -f "${TMPDIR:-/tmp}"/php-build.*.log`. Configure errors name the
+  missing library or header.
 
 See [local testing](docs/local-testing-manually.md) for a disposable install
 recipe.
