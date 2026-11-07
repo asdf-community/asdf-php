@@ -50,6 +50,9 @@ jobs:
             version: 8.5.12
             is_legacy: true
           # Latest
+          - os: fedora-44
+            version: latest
+            is_legacy: false
           - os: ubuntu-24.04
             version: latest
             is_legacy: false
