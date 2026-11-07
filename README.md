@@ -46,7 +46,9 @@ PostgreSQL support is optional too. Install `libpq-dev` on Ubuntu or Debian,
 pass `--with-pgsql` through `PHP_CONFIGURE_OPTIONS`. `GD` uses PHP's bundled library,
 so an OS `gd` development package is unnecessary. For `FreeType` font support in `GD`,
 install `libfreetype6-dev` on Ubuntu or Debian, `freetype2` on Arch, `freetype-devel`
-on Fedora, or `freetype` with Homebrew. `php-build` enables tidy by default on Linux, so these package lists include it.
+on Fedora, or `freetype` with Homebrew. `php-build` enables tidy by default on Linux,
+except for PHP 7.4 and PHP 8.0 releases before 8.0.20. These package lists include
+the tidy dependency.
 
 ### macOS
 

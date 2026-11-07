@@ -241,6 +241,7 @@ jobs:
 
   arch:
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     container:
       image: archlinux:base@sha256:b1c2fe6e717bfd5673af8fc217e1e1c3ce0dcbb1d53c3414c8425e7ce79fc6d9
     steps:
