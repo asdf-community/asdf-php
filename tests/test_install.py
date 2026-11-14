@@ -67,7 +67,9 @@ class InstallTests(unittest.TestCase):
 
     def test_install_entrypoint_is_executable(self) -> None:
         entrypoint = LIB_DIR.parent / "bin/install"
-        self.assertTrue(entrypoint.stat().st_mode & 0o111, f"{entrypoint} is not executable")
+        self.assertTrue(
+            entrypoint.stat().st_mode & 0o111, f"{entrypoint} is not executable"
+        )
 
     def test_php_parts_accepts_release_suffixes(self):
         self.assertEqual(install.php_parts("8.3.15RC1"), (8, 3, 15))
@@ -414,8 +416,46 @@ class InstallTests(unittest.TestCase):
                 patch.dict(
                     os.environ,
                     {
-                        "ASDF_INSTALL_VERSION": "8.5.4",
-                        "ASDF_INSTALL_PATH": str(install_path),
+                        "ASDF_PHP_INSTALL_VERSION": "8.5.4",
+                        "ASDF_PHP_INSTALL_PATH": str(install_path),
+                    },
+                    clear=True,
+                ),
+                patch.object(install, "setup_macos_dependencies"),
+                patch.object(install, "setup_optional_extensions"),
+                patch.object(install, "configure_openssl11"),
+                patch.object(install, "setup_openssl_pin"),
+                patch.object(install, "setup_compiler_for_old_php"),
+                patch.object(install, "setup_build_concurrency"),
+                patch.object(install, "patch_php_build_definitions"),
+                patch.object(install, "sanitize_cxxflags_for_modern_php"),
+                patch.object(install, "run") as run,
+            ):
+                self.assertEqual(install.main(plugin_dir), 0)
+            run.assert_called_once_with(
+                str(plugin_dir / "vendor/php-build/bin/php-build"),
+                "8.5.4",
+                str(install_path),
+            )
+            self.assertEqual(
+                (install_path / "conf.d/php.ini").read_text(),
+                "# Add custom PHP configuration here\n",
+            )
+
+    def test_install_uses_plugin_variables_not_shim_variables(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            plugin_dir = Path(temp_dir)
+            install_path = plugin_dir / "installed-php"
+            (plugin_dir / "vendor/php-build/bin").mkdir(parents=True)
+            (plugin_dir / "vendor/php-build/bin/php-build").touch()
+            with (
+                patch.dict(
+                    os.environ,
+                    {
+                        "ASDF_INSTALL_VERSION": "3.15.2",
+                        "ASDF_INSTALL_PATH": str(plugin_dir / "installed-python"),
+                        "ASDF_PHP_INSTALL_VERSION": "8.5.4",
+                        "ASDF_PHP_INSTALL_PATH": str(install_path),
                     },
                     clear=True,
                 ),

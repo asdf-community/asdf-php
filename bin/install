@@ -1,22 +1,15 @@
-#!/usr/bin/env python3
-"""Install a PHP version through the bundled php-build checkout."""
+#!/usr/bin/env bash
+if ((BASH_VERSINFO[0] * 100 + BASH_VERSINFO[1] < 302)); then
+  printf '%s: requires Bash 3.2 or newer (found %s)\n' \
+    "${0##*/}" "${BASH_VERSION}" >&2
+  exit 1
+fi
 
-import sys
-from pathlib import Path
+set -euo pipefail
 
-PLUGIN_DIR = Path(__file__).resolve().parent.parent
-if sys.version_info < (3, 9):
-    print("asdf-php: bin/install requires Python 3.9 or newer", file=sys.stderr)
-    raise SystemExit(1)
-sys.path.insert(0, str(PLUGIN_DIR / "lib"))
+plugin_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
-from install import main
+export ASDF_PHP_INSTALL_VERSION="${ASDF_INSTALL_VERSION:-}"
+export ASDF_PHP_INSTALL_PATH="${ASDF_INSTALL_PATH:-}"
 
-if __name__ == "__main__":
-    if sys.argv[1:] in (["-h"], ["--help"]):
-        print("Usage: bin/install\nRequires Python 3.9 or newer.")
-        raise SystemExit(0)
-    if sys.argv[1:]:
-        print("Usage: bin/install", file=sys.stderr)
-        raise SystemExit(2)
-    raise SystemExit(main(PLUGIN_DIR))
+exec python3 "$plugin_dir/lib/install.py" "$@"
