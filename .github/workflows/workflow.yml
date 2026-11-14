@@ -243,7 +243,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 45
     container:
-      image: archlinux:base@sha256:b1c2fe6e717bfd5673af8fc217e1e1c3ce0dcbb1d53c3414c8425e7ce79fc6d9
+      image: archlinux:base@sha256:d4594bb2300cba11f41c2f27923eb56f63d9988909c402f9c95517d1e362c899
     steps:
       - name: Install system packages
         run: pacman -Syu --noconfirm --needed bash curl git nodejs autoconf bison gcc make re2c pkgconf python ca-certificates libxml2 sqlite oniguruma libzip libjpeg-turbo libpng icu openssl readline zlib bzip2 libxslt tidy
