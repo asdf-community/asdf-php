@@ -590,10 +590,13 @@ def main(plugin_dir: Path) -> int:
             )
             return 1
     os.environ["PATH"] = f"{php_build_root / 'bin'}:{os.environ.get('PATH', '')}"
-    version = os.environ.get("ASDF_INSTALL_VERSION")
-    install_path_value = os.environ.get("ASDF_INSTALL_PATH")
+    version = os.environ.get("ASDF_PHP_INSTALL_VERSION")
+    install_path_value = os.environ.get("ASDF_PHP_INSTALL_PATH")
     if not version or not install_path_value:
-        print("ASDF_INSTALL_VERSION and ASDF_INSTALL_PATH must be set", file=sys.stderr)
+        print(
+            "ASDF_PHP_INSTALL_VERSION and ASDF_PHP_INSTALL_PATH must be set",
+            file=sys.stderr,
+        )
         return 2
     if version == "latest":
         version = run(
@@ -632,3 +635,16 @@ def main(plugin_dir: Path) -> int:
     except (OSError, RuntimeError, ValueError, subprocess.CalledProcessError) as error:
         print(f"asdf-php: {error}", file=sys.stderr)
         return 1
+
+
+if __name__ == "__main__":
+    if sys.version_info < (3, 9):
+        print("asdf-php: bin/install requires Python 3.9 or newer", file=sys.stderr)
+        raise SystemExit(1)
+    if sys.argv[1:] in (["-h"], ["--help"]):
+        print("Usage: bin/install\nRequires Python 3.9 or newer.")
+        raise SystemExit(0)
+    if sys.argv[1:]:
+        print("Usage: bin/install", file=sys.stderr)
+        raise SystemExit(2)
+    raise SystemExit(main(Path(__file__).resolve().parent.parent))
