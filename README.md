@@ -37,6 +37,27 @@ sudo dnf install autoconf bison gcc gcc-c++ make re2c curl git python3 \
   libtidy-devel
 ```
 
+### RHEL 8, Rocky Linux 8 and AlmaLinux 8
+
+The default `python3` on these systems is 3.6, which is too old for the installer.
+Install a newer Python and make it the default `python3`. Enable the EPEL and
+PowerTools repositories first, as several development packages live there.
+
+```bash
+sudo dnf install epel-release 'dnf-command(config-manager)'
+sudo dnf config-manager --set-enabled powertools
+sudo dnf install autoconf automake bison gcc gcc-c++ make re2c curl git python3.11 \
+  pkgconf-pkg-config ca-certificates bzip2 bzip2-devel findutils diffutils \
+  libxml2-devel sqlite-devel oniguruma-devel libcurl-devel libzip-devel \
+  libjpeg-turbo-devel libpng-devel libicu-devel openssl-devel readline-devel \
+  libxslt-devel libtidy-devel
+sudo alternatives --set python3 /usr/bin/python3.11
+```
+
+On RHEL itself, enable the `codeready-builder-for-rhel-8-$(arch)-rpms` repository
+instead of `powertools`. Minimal container images also need `bzip2`, `findutils`
+and `diffutils`, which are included in the list above.
+
 `GMP` and `sodium` support is enabled when their development libraries are present.
 These extensions are optional. On Ubuntu or Debian install `libgmp-dev` and
 `libsodium-dev`; on Arch install `gmp` and `libsodium`; on Fedora install `gmp-devel`
