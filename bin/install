@@ -12,4 +12,11 @@ plugin_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 export ASDF_PHP_INSTALL_VERSION="${ASDF_INSTALL_VERSION:-}"
 export ASDF_PHP_INSTALL_PATH="${ASDF_INSTALL_PATH:-}"
 
+# install.py cannot report an old Python itself: Python 3.6 fails to parse it.
+if ! python3 -c 'import sys; sys.exit(sys.version_info < (3, 9))' 2>/dev/null; then
+  printf '%s: requires Python 3.9 or newer (found %s)\n' \
+    "${0##*/}" "$(python3 --version 2>&1 || true)" >&2
+  exit 1
+fi
+
 exec python3 "$plugin_dir/lib/install.py" "$@"

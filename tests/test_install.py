@@ -144,6 +144,37 @@ class InstallTests(unittest.TestCase):
         self.assertNotIn("PHP_BUILD_CONFIGURE_OPTS", os.environ)
         self.assertEqual(output.call_count, 2)
 
+    def test_main_stops_before_the_build_when_prerequisites_are_missing(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            plugin_dir = Path(temp_dir)
+            (plugin_dir / "vendor/php-build/bin").mkdir(parents=True)
+            (plugin_dir / "vendor/php-build/bin/php-build").touch()
+            with (
+                patch.dict(
+                    os.environ,
+                    {
+                        "ASDF_PHP_INSTALL_VERSION": "8.5.4",
+                        "ASDF_PHP_INSTALL_PATH": str(plugin_dir / "installed-php"),
+                    },
+                    clear=True,
+                ),
+                patch.object(install, "setup_macos_dependencies"),
+                patch.object(install, "setup_optional_extensions"),
+                patch.object(install, "configure_openssl11"),
+                patch.object(install, "setup_openssl_pin"),
+                patch.object(install, "setup_compiler_for_old_php"),
+                patch.object(
+                    install,
+                    "check_build_prerequisites",
+                    side_effect=RuntimeError("missing build prerequisites: bzip2"),
+                ),
+                patch.object(install, "run") as run,
+                redirect_stderr(StringIO()) as errors,
+            ):
+                self.assertEqual(install.main(plugin_dir), 1)
+            run.assert_not_called()
+            self.assertIn("missing build prerequisites: bzip2", errors.getvalue())
+
     def test_macos_without_brew_disables_tidy(self):
         with (
             patch.object(install, "on_macos", return_value=True),
@@ -426,6 +457,7 @@ class InstallTests(unittest.TestCase):
                 patch.object(install, "configure_openssl11"),
                 patch.object(install, "setup_openssl_pin"),
                 patch.object(install, "setup_compiler_for_old_php"),
+                patch.object(install, "check_build_prerequisites"),
                 patch.object(install, "setup_build_concurrency"),
                 patch.object(install, "patch_php_build_definitions"),
                 patch.object(install, "sanitize_cxxflags_for_modern_php"),
@@ -464,6 +496,7 @@ class InstallTests(unittest.TestCase):
                 patch.object(install, "configure_openssl11"),
                 patch.object(install, "setup_openssl_pin"),
                 patch.object(install, "setup_compiler_for_old_php"),
+                patch.object(install, "check_build_prerequisites"),
                 patch.object(install, "setup_build_concurrency"),
                 patch.object(install, "patch_php_build_definitions"),
                 patch.object(install, "sanitize_cxxflags_for_modern_php"),

@@ -58,6 +58,15 @@ On RHEL itself, enable the `codeready-builder-for-rhel-8-$(arch)-rpms` repositor
 instead of `powertools`. Minimal container images also need `bzip2`, `findutils`
 and `diffutils`, which are included in the list above.
 
+On x86_64 the default toolchain (GCC 8, binutils 2.30) fails to link PHP with
+`dynamic STT_GNU_IFUNC symbol ... recompile with -fPIE and relink with -pie`.
+Build with position-independent flags for both C and C++ code. CI verifies this
+on Rocky Linux 8 with PHP 8.3.11 and 8.4.7:
+
+```bash
+CFLAGS="-fPIE" CXXFLAGS="-fPIE" LDFLAGS="-pie" asdf install php 8.4.7
+```
+
 `GMP` and `sodium` support is enabled when their development libraries are present.
 These extensions are optional. On Ubuntu or Debian install `libgmp-dev` and
 `libsodium-dev`; on Arch install `gmp` and `libsodium`; on Fedora install `gmp-devel`
@@ -99,6 +108,10 @@ plugin initialises its pinned php-build submodule.
 
 - php-build downloads and compiles PHP. Its Composer plugin installs Composer
   alongside each PHP version.
+- On Linux, the installer checks for the build tools and libraries above before it
+  starts, and stops with one message that names what is missing and the command
+  to install it. Set `ASDF_PHP_SKIP_PREFLIGHT=yes` to skip the check, for example
+  when libraries live outside the standard paths.
 - GMP and sodium are enabled when `pkg-config` finds their libraries. Add
   `--without-gmp` or `--without-sodium` to `PHP_CONFIGURE_OPTIONS` to opt out.
 - On macOS, the plugin enables tidy when `tidy-html5` is installed and disables

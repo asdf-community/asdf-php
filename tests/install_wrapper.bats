@@ -13,6 +13,14 @@ setup() {
   mkdir -p "${TEST_TEMP_DIR}/mock-bin"
   cat >"${TEST_TEMP_DIR}/mock-bin/python3" <<'EOF'
 #!/usr/bin/env bash
+# bin/install asks for the version first; answer without logging it.
+if [[ "$1" == "-c" ]]; then
+  exit "${MOCK_PYTHON_VERSION_CHECK:-0}"
+fi
+if [[ "$1" == "--version" ]]; then
+  printf 'Python %s\n' "${MOCK_PYTHON_VERSION:-3.14.6}"
+  exit 0
+fi
 # Mimic the asdf Python shim: it sets the install variables for Python.
 export ASDF_INSTALL_VERSION=3.14.6
 export ASDF_INSTALL_PATH=/shim/installs/python/3.14.6
@@ -63,4 +71,17 @@ EOF
   [ "${status}" -eq 0 ]
   grep -qx 'ASDF_PHP_INSTALL_VERSION=' "${MOCK_PYTHON_LOG}"
   grep -qx 'ASDF_PHP_INSTALL_PATH=' "${MOCK_PYTHON_LOG}"
+}
+
+@test "stops with a clear message when Python is older than 3.9" {
+  run -1 env MOCK_PYTHON_VERSION_CHECK=1 MOCK_PYTHON_VERSION=3.6.8 \
+    "${BATS_TEST_DIRNAME}/../bin/install"
+
+  [ "${output}" = "install: requires Python 3.9 or newer (found Python 3.6.8)" ]
+}
+
+@test "does not start install.py when Python is too old" {
+  run -1 env MOCK_PYTHON_VERSION_CHECK=1 "${BATS_TEST_DIRNAME}/../bin/install"
+
+  [ ! -e "${MOCK_PYTHON_LOG}" ]
 }

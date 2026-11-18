@@ -305,7 +305,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        version: [8.3.11, 8.4.7]
+        version: [8.3.36, 8.4.27]
     steps:
       - name: Install system packages
         run: |

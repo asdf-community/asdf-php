@@ -12,6 +12,8 @@ import tempfile
 from collections.abc import Mapping
 from pathlib import Path
 
+from dependencies_and_flag_check import check_build_prerequisites, setup_pie_for_rhel8
+
 
 def run(
     *args: str,
@@ -610,6 +612,8 @@ def main(plugin_dir: Path) -> int:
         configure_openssl11(version, plugin_dir)
         setup_openssl_pin()
         setup_compiler_for_old_php(version)
+        setup_pie_for_rhel8()
+        check_build_prerequisites()
         if not os.getenv("PHP_BUILD_XDEBUG_ENABLE"):
             os.environ["PHP_BUILD_XDEBUG_ENABLE"] = "off"
         if os.getenv("PHP_CONFIGURE_OPTIONS"):
