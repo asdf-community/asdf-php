@@ -295,3 +295,42 @@ jobs:
             php --ri "$ext" >/dev/null
             printf '✓ %s\n' "$ext"
           done
+
+  rhel8:
+    # Reproduces issue #183 (PIE/IFUNC link error on RHEL 8) on native x86_64.
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    container:
+      image: rockylinux:8
+    strategy:
+      fail-fast: false
+      matrix:
+        version: [8.3.36, 8.4.27]
+    steps:
+      - name: Install system packages
+        run: |
+          dnf -y install epel-release 'dnf-command(config-manager)'
+          dnf config-manager --set-enabled powertools
+          dnf -y install bash curl git nodejs autoconf automake bison gcc gcc-c++ make re2c pkgconf-pkg-config python3.11 ca-certificates bzip2 bzip2-devel findutils diffutils libxml2-devel libcurl-devel gd-devel libicu-devel oniguruma-devel libpq-devel libzip-devel sqlite-devel openssl-devel readline-devel libpng-devel libjpeg-turbo-devel freetype-devel libtidy-devel libxslt-devel
+          alternatives --set python3 /usr/bin/python3.11
+      - uses: actions/checkout@v7
+        with:
+          submodules: recursive
+      - name: Setup asdf
+        uses: asdf-vm/actions/setup@v4
+      - name: Build and check PHP ${{ matrix.version }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          # Workaround for the STT_GNU_IFUNC link error on RHEL 8 (GCC 8, binutils 2.30).
+          export CFLAGS="-fPIE"
+          export CXXFLAGS="-fPIE"
+          export LDFLAGS="-pie"
+          asdf plugin add php "$GITHUB_WORKSPACE"
+          if ! asdf install php ${{ matrix.version }}; then
+            find "${TMPDIR:-/tmp}" /tmp -name 'php-build.*.log' -type f -print -exec tail -150 {} \; 2>/dev/null || true
+            exit 1
+          fi
+          asdf set php ${{ matrix.version }}
+          php --version
