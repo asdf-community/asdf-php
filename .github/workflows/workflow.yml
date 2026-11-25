@@ -134,7 +134,7 @@ jobs:
 
             # Add macOS-specific PHP build configure options
             if [ "${{ runner.os }}" = "macOS" ]; then
-              echo "PHP_BUILD_CONFIGURE_OPTS=--with-bz2=$(brew --prefix bzip2) --with-iconv=$(brew --prefix libiconv) --with-openssl=$(brew --prefix openssl@3) ${{ env.TIDY_CONFIG }}" >> $GITHUB_ENV
+              echo "PHP_BUILD_CONFIGURE_OPTS=--with-bz2=$(brew --prefix bzip2) --with-iconv=$(brew --prefix libiconv) --with-openssl=$(brew --prefix openssl@3) $TIDY_CONFIG" >> $GITHUB_ENV
             fi
 
             # Debug output
@@ -150,7 +150,7 @@ jobs:
 
             # Add macOS-specific PHP build configure options for modern versions
             if [ "${{ runner.os }}" = "macOS" ]; then
-              echo "PHP_BUILD_CONFIGURE_OPTS=--with-bz2=$(brew --prefix bzip2) --with-iconv=$(brew --prefix libiconv) --with-openssl=$(brew --prefix openssl@3) ${{ env.TIDY_CONFIG }}" >> $GITHUB_ENV
+              echo "PHP_BUILD_CONFIGURE_OPTS=--with-bz2=$(brew --prefix bzip2) --with-iconv=$(brew --prefix libiconv) --with-openssl=$(brew --prefix openssl@3) $TIDY_CONFIG" >> $GITHUB_ENV
             fi
           fi
 
