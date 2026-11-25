@@ -6,7 +6,7 @@ setup() {
   export TEST_TEMP_DIR="${BATS_TEST_TMPDIR}"
   export PLUGIN_DIR="${TEST_TEMP_DIR}/plugin"
   export MOCK_GIT_LOG="${TEST_TEMP_DIR}/git.log"
-  export PINNED_PHP_BUILD_SHA="48f66c3c15eaead0ef362b5349dc85cc24195da3"
+  export PINNED_PHP_BUILD_SHA="01bdb963fdd147f1077fd763e67cddcfcf7fdb76"
   REAL_GIT="$(command -v git)"
   export REAL_GIT
 
